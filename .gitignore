@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+server.pid
+
+# Coverage
+coverage
+.nyc_output
+
+# Editor directories and files
+.idea
+.vscode
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Agent guidelines (generated per session)
+AGENT.md
+AGENTS.md
