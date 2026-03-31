@@ -35,6 +35,4 @@ coverage
 
 # Agent guidelines (generated per session)
 AGENTS.md
-
-# Planning docs (local only)
 .planning/
