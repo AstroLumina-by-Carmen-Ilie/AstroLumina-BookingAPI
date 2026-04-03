@@ -34,5 +34,5 @@ coverage
 .env.*.local
 
 # Agent guidelines (generated per session)
-AGENT.md
 AGENTS.md
+.planning/

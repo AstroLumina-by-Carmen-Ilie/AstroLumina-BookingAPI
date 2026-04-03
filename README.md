@@ -11,8 +11,6 @@ Cal.com booking management for the AstroLumina astrological services platform �
 
 Manages online astrological session bookings via the Cal.com API. Provides endpoints for listing session types, checking available time slots, creating/rescheduling/cancelling bookings, and syncing event types from Cal.com.
 
-Three session types are mirrored from the [Stan store](https://stan.store/AstroLumina):
-
 | Session | Duration | Price | Description |
 |---------|----------|-------|-------------|
 | **Astrograma Natală și Karmică** | 120 min | €75 | Birth chart analysis — personality, purpose, talents, blocks, and transgenerational patterns |
