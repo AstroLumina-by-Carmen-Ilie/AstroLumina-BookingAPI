@@ -12,10 +12,10 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist",
-    "render-build": "rm -rf node_modules && npm install --include=dev && npm run build",
     "seed": "tsx src/scripts/seed-event-types.ts",
-    "local-build": "rm -rf node_modules && rm -rf dist && npm update && npm install --include=dev && npm run build"
+    "clean": "rm -rf node_modules && rm -rf dist",
+    "render-build": "npm run clean && npm install --include=dev && npm run build",
+    "update-n-build": "npm update --ignore-scripts && npm install --include=dev && npm run build"
   },
   "dependencies": {
     "@sentry/node": "^10.45.0",
