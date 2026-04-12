@@ -1,27 +1,60 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
+import axios from 'axios';
 import { z } from 'zod';
 import { calcomService } from '../services/calcom.js';
 import { Sentry } from '../instrument.js';
 import { createError } from '../middleware/error-handler.js';
+import { SESSION_SLUGS, resolveEventTypeForSession } from '../config/session-slugs.js';
 
 const router = Router();
 
+function normalizeStartUtcIso(start: string): string {
+  const d = new Date(start);
+  if (Number.isNaN(d.getTime())) return start;
+  return d.toISOString();
+}
+
+function pruneEmptyMetadata(
+  metadata: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!metadata) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(metadata)) {
+    if (v != null && String(v).trim() !== '') {
+      out[k] = String(v);
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 // ─── Validation Schemas ─────────────────────────────────────
 
-const createBookingSchema = z.object({
-  eventTypeId: z.number().int().positive('eventTypeId must be a positive integer'),
-  start: z.string().min(1, 'Start time is required (ISO 8601 UTC)'),
-  attendee: z.object({
-    name: z.string().min(1, 'Attendee name is required'),
-    email: z.string().email('Valid attendee email is required'),
-    timeZone: z.string().min(1, 'Time zone is required'),
-    phoneNumber: z.string().optional(),
-    language: z.string().optional(),
-  }),
-  metadata: z.record(z.string()).optional(),
-  bookingFieldsResponses: z.record(z.unknown()).optional(),
-  guests: z.array(z.string().email()).optional(),
-});
+const createBookingSchema = z
+  .object({
+    /** Opțional dacă trimiți sessionKey — același mecanism ca la /api/availability/slots/session/:key */
+    sessionKey: z.string().min(1).optional(),
+    eventTypeId: z.number().int().positive().optional(),
+    start: z.string().min(1, 'Start time is required (ISO 8601)'),
+    attendee: z.object({
+      name: z.string().min(1, 'Attendee name is required'),
+      email: z.string().email('Valid attendee email is required'),
+      timeZone: z.string().min(1, 'Time zone is required'),
+      phoneNumber: z.string().optional(),
+      language: z.string().optional(),
+    }),
+    metadata: z.record(z.string()).optional(),
+    bookingFieldsResponses: z.record(z.unknown()).optional(),
+    guests: z.array(z.string().email()).optional(),
+  })
+  .refine(
+    (data) =>
+      data.eventTypeId != null ||
+      (data.sessionKey != null && data.sessionKey.length > 0),
+    {
+      message: 'Either eventTypeId or sessionKey is required',
+      path: ['sessionKey'],
+    },
+  );
 
 const rescheduleBookingSchema = z.object({
   start: z.string().min(1, 'New start time is required (ISO 8601 UTC)'),
@@ -103,8 +136,8 @@ router.get(
  *
  * Body:
  * {
- *   "eventTypeId": 123,
- *   "start": "2026-04-01T10:00:00Z",
+ *   "sessionKey": "astrograma-natala-si-karmica",
+ *   "start": "2026-04-01T10:00:00.000Z",
  *   "attendee": {
  *     "name": "Maria Popescu",
  *     "email": "maria@example.com",
@@ -119,6 +152,8 @@ router.get(
  *     "birth-time": "14:30"
  *   }
  * }
+ *
+ * Poți trimite în loc de sessionKey un "eventTypeId" numeric dacă îl cunoști.
  */
 router.post(
   '/api/bookings',
@@ -130,17 +165,55 @@ router.post(
         throw createError(400, `Invalid booking data: ${errors.join(', ')}`);
       }
 
-      const { eventTypeId, start, attendee, metadata, bookingFieldsResponses, guests } =
-        parseResult.data;
+      const {
+        sessionKey,
+        eventTypeId: bodyEventTypeId,
+        start,
+        attendee,
+        metadata,
+        bookingFieldsResponses,
+        guests,
+      } = parseResult.data;
+
+      let eventTypeId: number;
+
+      if (sessionKey) {
+        if (!SESSION_SLUGS[sessionKey]) {
+          throw createError(
+            400,
+            `Unknown session key "${sessionKey}". Valid keys: ${Object.keys(SESSION_SLUGS).join(', ')}`,
+          );
+        }
+        const eventTypes = await Sentry.startSpan(
+          { op: 'calcom.event-types', name: 'resolve-booking-session' },
+          async () => calcomService.getEventTypes(),
+        );
+        const eventType = resolveEventTypeForSession(sessionKey, eventTypes);
+        
+        if (!eventType) {
+          throw createError(
+            404,
+            `Cal.com event type for session "${sessionKey}" not found. Run: npm run seed`,
+          );
+        }
+        eventTypeId = eventType.id;
+      } else if (bodyEventTypeId != null) {
+        eventTypeId = bodyEventTypeId;
+      } else {
+        throw createError(400, 'Either eventTypeId or sessionKey is required');
+      }
+
+      const startUtc = normalizeStartUtcIso(start);
+      const metadataClean = pruneEmptyMetadata(metadata);
 
       const booking = await Sentry.startSpan(
         { op: 'calcom.bookings', name: 'create-booking' },
         async () =>
           calcomService.createBooking({
             eventTypeId,
-            start,
+            start: startUtc,
             attendee,
-            metadata,
+            metadata: metadataClean,
             bookingFieldsResponses,
             guests,
           }),
@@ -149,6 +222,9 @@ router.post(
       res.status(201).json({ booking });
     } catch (error) {
       console.error('Error creating booking:', error);
+      if (axios.isAxiosError(error) && error.response?.data) {
+        console.error('Cal.com error response:', JSON.stringify((error.response as any).data, null, 2));
+      }
       Sentry.captureException(error, { tags: { endpoint: 'create-booking' } });
       next(error);
     }

@@ -1,5 +1,20 @@
 import type { Request, Response, NextFunction } from 'express';
+import axios from 'axios';
 import { env } from '../config/env.js';
+
+function calComErrorMessage(data: unknown): string | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+  const o = data as Record<string, unknown>;
+  const err = o['error'];
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const e = err as Record<string, unknown>;
+    if (typeof e['message'] === 'string') return e['message'];
+    return JSON.stringify(err);
+  }
+  if (typeof o['message'] === 'string') return o['message'];
+  return undefined;
+}
 
 export interface AppError extends Error {
   statusCode?: number;
@@ -32,7 +47,7 @@ export function notFoundHandler(_req: Request, res: Response): void {
 }
 
 export function globalErrorHandler(
-  err: AppError,
+  err: unknown,
   _req: Request,
   res: Response,
   _next: NextFunction,
@@ -40,14 +55,34 @@ export function globalErrorHandler(
   console.error('Unhandled error:', err);
 
   const isProduction = env.NODE_ENV === 'production';
-  const statusCode = err.statusCode ?? 500;
+
+  if (axios.isAxiosError(err)) {
+    const upstream = err.response?.status;
+    const body = err.response?.data;
+    const calMsg = calComErrorMessage(body);
+    if (upstream && upstream >= 400 && upstream < 500) {
+      res.status(upstream).json({
+        error: calMsg ?? err.message ?? 'Upstream request failed',
+        ...(!isProduction && body !== undefined ? { details: body } : {}),
+      });
+      return;
+    }
+    res.status(502).json({
+      error: isProduction ? 'Bad gateway' : calMsg ?? err.message,
+      ...(!isProduction && body !== undefined ? { details: body } : {}),
+    });
+    return;
+  }
+
+  const appErr = err as AppError;
+  const statusCode = appErr.statusCode ?? 500;
 
   const response: Record<string, unknown> = {
-    error: isProduction ? 'Internal server error' : err.message,
+    error: isProduction ? 'Internal server error' : appErr.message ?? 'Error',
   };
 
-  if (!isProduction) {
-    response.stack = err.stack;
+  if (!isProduction && appErr instanceof Error) {
+    response.stack = appErr.stack;
   }
 
   res.status(statusCode).json(response);

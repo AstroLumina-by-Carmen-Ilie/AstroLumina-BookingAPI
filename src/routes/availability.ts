@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { calcomService } from '../services/calcom.js';
 import { Sentry } from '../instrument.js';
 import { createError } from '../middleware/error-handler.js';
+import { SESSION_SLUGS, resolveEventTypeForSession } from '../config/session-slugs.js';
 
 const router = Router();
 
@@ -61,14 +62,8 @@ router.get(
  * and returns available slots. Useful for the frontend.
  *
  * Path params:
- *   - sessionKey: "astrograma-natala-karmica" | "astrograma-relationala" | "astrograma-previzionala"
+ *   - sessionKey: "astrograma-natala-si-karmica" | "astrograma-relationala" | "astrograma-previzionala"
  */
-const SESSION_SLUGS: Record<string, string> = {
-  'astrograma-natala-karmica': 'astrograma-natal-i-karmic',
-  'astrograma-relationala': 'astrograma-relationala',
-  'astrograma-previzionala': 'astrograma-previzionala',
-};
-
 router.get(
   '/api/availability/slots/session/:sessionKey',
   async (req: Request, res: Response, next: NextFunction) => {
@@ -100,14 +95,12 @@ router.get(
         async () => calcomService.getEventTypes(),
       );
 
-      const eventType = eventTypes.find(
-        (et: { slug: string }) => et.slug === expectedSlug,
-      );
+      const eventType = resolveEventTypeForSession(sessionKey, eventTypes);
 
       if (!eventType) {
         throw createError(
           404,
-          `Cal.com event type for "${sessionKey}" not found. Run the seed script first: npm run seed`,
+          `Cal.com event type for "${sessionKey}" not found (slug: ${expectedSlug}). Run the seed script first: npm run seed`,
         );
       }
 

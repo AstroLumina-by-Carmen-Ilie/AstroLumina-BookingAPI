@@ -33,14 +33,6 @@ npm start
 
 Server runs on `http://localhost:3031`.
 
-### Seed Cal.com event types
-
-Creates or updates the 3 session types in your Cal.com account:
-
-```bash
-npm run seed
-```
-
 ## API Endpoints
 
 ### `GET /health`
@@ -57,9 +49,9 @@ Lists the 3 AstroLumina session types with their Cal.com event type status.
 {
   "sessions": [
     {
-      "key": "astrograma-natala-karmica",
+      "key": "astrograma-natala-si-karmica",
       "title": "Astrograma Natală și Karmică",
-      "slug": "astrograma-natal-i-karmic",
+      "slug": "astrograma-natala-si-karmica",
       "durationMinutes": 120,
       "price": 75,
       "currency": "EUR",
@@ -95,12 +87,12 @@ Returns available booking slots for a given event type and date range.
 
 Convenience endpoint — resolves a session key to a Cal.com event type and returns slots.
 
-**Valid keys:** `astrograma-natala-karmica`, `astrograma-relationala`, `astrograma-previzionala`
+**Valid keys:** `astrograma-natala-si-karmica`, `astrograma-relationala`, `astrograma-previzionala`
 
 **Example:**
 
 ```bash
-curl "http://localhost:3031/api/availability/slots/session/astrograma-natala-karmica?startTime=2026-04-01T00:00:00Z&endTime=2026-04-07T23:59:59Z"
+curl "http://localhost:3031/api/availability/slots/session/astrograma-natala-si-karmica?startTime=2026-04-01T00:00:00Z&endTime=2026-04-07T23:59:59Z"
 ```
 
 ### `GET /api/bookings`
@@ -198,8 +190,6 @@ src/
 │   └── calcom.ts               # Cal.com API client (axios)
 ├── types/
 │   └── calcom.ts               # Cal.com TypeScript interfaces
-├── scripts/
-│   └── seed-event-types.ts     # Idempotent Cal.com event type seeder
 └── server.ts                   # App entry + graceful shutdown
 ```
 

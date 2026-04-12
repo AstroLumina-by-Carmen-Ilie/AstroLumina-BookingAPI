@@ -12,7 +12,6 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
-    "seed": "tsx src/scripts/seed-event-types.ts",
     "clean": "rm -rf node_modules && rm -rf dist",
     "render-build": "npm run clean && npm install --include=dev && npm run build",
     "update-n-build": "npm update --ignore-scripts && npm install --include=dev && npm run build"

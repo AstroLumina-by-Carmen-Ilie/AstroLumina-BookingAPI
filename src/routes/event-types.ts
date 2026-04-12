@@ -73,9 +73,9 @@ router.get(
 
       const sessionTypes = [
         {
-          key: 'astrograma-natala-karmica',
+          key: 'astrograma-natala-si-karmica',
           title: 'Astrograma Natală și Karmică',
-          slug: 'astrograma-natal-i-karmic',
+          slug: 'astrograma-natala-si-karmica',
           description:
             'Sesiune live în care aducem claritate și direcție prin înțelegerea astrogramei tale! Explorăm împreună harta ta natală – „poza cerului" din momentul nașterii tale. Fiecare planetă vorbește despre o parte din tine, de la felul în care iubești, până la cum îți exprimi talentele sau ce tipare te pot bloca. Include și analiza transgenerațională a hărții tale.',
           durationMinutes: 120,

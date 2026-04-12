@@ -6,7 +6,6 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3031),
 
   CALCOM_API_KEY: z.string().min(1, 'CALCOM_API_KEY is required'),
-  CALCOM_API_VERSION: z.string().default('2024-08-13'),
   CALCOM_BASE_URL: z.string().url().default('https://api.cal.com'),
 
   SENTRY_DSN: z.string().url().optional(),
