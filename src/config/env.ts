@@ -12,6 +12,8 @@ const envSchema = z.object({
   SENTRY_RELEASE: z.string().optional(),
 
   CORS_ORIGINS: z.string().optional(),
+
+  RESEND_API_KEY: z.string().startsWith('re_', 'Must be a valid Resend API key').optional(),
 });
 
 function validateEnv() {
