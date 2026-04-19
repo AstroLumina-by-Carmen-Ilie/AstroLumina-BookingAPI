@@ -9,7 +9,7 @@ const router = Router();
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
-const FROM_EMAIL = 'AstroLumina <carmen.ilie@astrolumina.ro>';
+const FROM_EMAIL = 'AstroLumina <onboarding@resend.dev>';
 
 const emailSchema = z.object({
   to: z.string().email('Invalid email address'),
