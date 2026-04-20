@@ -14,6 +14,8 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
 
   RESEND_API_KEY: z.string().startsWith('re_', 'Must be a valid Resend API key').optional(),
+
+  R2_BASE_URL: z.string().url().default('https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs'),
 });
 
 function validateEnv() {

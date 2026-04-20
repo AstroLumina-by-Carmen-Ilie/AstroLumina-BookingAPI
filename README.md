@@ -271,6 +271,61 @@ Cancel a booking.
 
 ---
 
+### Email
+
+#### `POST /api/send-email`
+
+Send a templated email.
+
+**Request Body:**
+
+```json
+{
+  "to": "client@example.com",
+  "type": "ghid-saturn"
+}
+```
+
+**Available templates:**
+- `ghid-saturn` — Saturn in Aries guide
+- `soarele-stralucirea-ta` — Sun sign gift
+
+---
+
+#### `POST /api/send-email-with-attachments`
+
+Send an email with PDF attachments downloaded from R2 storage. PDFs are downloaded to a temp directory, attached to the email, and automatically deleted after sending.
+
+**Request Body:**
+
+```json
+{
+  "to": "client@example.com",
+  "subject": "Your Birth Chart Analysis",
+  "html": "<p>Please find your birth chart analysis attached.</p>",
+  "attachments": [
+    "chart-123.pdf"
+  ]
+}
+```
+
+**Attachment options:**
+- Full URL: `"https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs/chart-123.pdf"`
+- Just filename: `"chart-123.pdf"` (uses R2_BASE_URL)
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "abc123..."
+  }
+}
+```
+
+---
+
 ## Configuration
 
 ### Environment Variables
@@ -284,6 +339,10 @@ Cancel a booking.
 | `CORS_ORIGINS` | No | *(see below)* | Comma-separated allowed CORS origins |
 | `SENTRY_DSN` | No | — | Sentry DSN for error tracking |
 | `SENTRY_RELEASE` | No | — | Sentry release identifier |
+| `RESEND_API_KEY` | No | — | Resend API key for sending emails (starts with `re_`) |
+| `R2_BASE_URL` | No | *(see below)* | Cloudflare R2 base URL for PDF attachments |
+
+**Default R2 Base URL:** `https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs`
 
 ### Default CORS Origins
 
@@ -319,21 +378,22 @@ The API uses different Cal.com API versions per resource:
 src/
 ├── config/
 │   ├── env.ts                  # Zod-validated environment config
-│   └── session-slugs.ts         # Session key → Cal.com slug mapping
+│   └── session-slugs.ts        # Session key → Cal.com slug mapping
 ├── middleware/
 │   ├── security.ts             # Helmet, CORS, rate limiter
-│   └── error-handler.ts       # Custom error types + global handler
+│   └── error-handler.ts        # Custom error types + global handler
 ├── routes/
-│   ├── health.ts              # Health check endpoint
-│   ├── event-types.ts        # Event types + sessions listing
-│   ├── bookings.ts           # Booking CRUD + reschedule + cancel
-│   └── availability.ts        # Available slots lookup
+│   ├── health.ts               # Health check endpoint
+│   ├── event-types.ts          # Event types + sessions listing
+│   ├── bookings.ts             # Booking CRUD + reschedule + cancel
+│   ├── availability.ts         # Available slots lookup
+│   └── email.ts                # Email sending with R2 attachments
 ├── services/
-│   └── calcom.ts              # Cal.com API client (axios)
+│   └── calcom.ts               # Cal.com API client (axios)
 ├── types/
-│   └── calcom.ts             # Cal.com TypeScript interfaces
-├── instrument.ts              # Sentry initialization
-└── server.ts                 # Express app + graceful shutdown
+│   └── calcom.ts               # Cal.com TypeScript interfaces
+├── instrument.ts               # Sentry initialization
+└── server.ts                   # Express app + graceful shutdown
 ```
 
 ---
@@ -350,6 +410,8 @@ src/
 | Monitoring | Sentry + Profiling |
 | Security | Helmet, CORS, Rate Limiting (30 req/min/IP) |
 | Scheduling | Cal.com API v2 |
+| Email | Resend |
+| Storage | Cloudflare R2 (PDF attachments) |
 
 ---
 
