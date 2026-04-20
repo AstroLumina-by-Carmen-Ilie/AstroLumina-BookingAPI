@@ -63,7 +63,7 @@ async function downloadR2ToLocal(fileUrl: string): Promise<string> {
   const response = await axios({
     url: fileUrl,
     method: 'GET',
-    responseType: '.arraybuffer',
+    responseType: 'arraybuffer',
   });
 
   await fs.writeFile(localPath, Buffer.from(response.data));
