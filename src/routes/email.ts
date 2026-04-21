@@ -150,10 +150,12 @@ router.post(
           to,
           subject,
           html,
-          attachments: attachmentFiles.map((filePath) => ({
-            path: filePath,
-            filename: path.basename(filePath),
-          })),
+          attachments: await Promise.all(
+            attachmentFiles.map(async (filePath) => ({
+              filename: path.basename(filePath),
+              content: (await fs.readFile(filePath)).toString('base64'),
+            }))
+          ),
         });
 
         res.json({ success: true, data });
