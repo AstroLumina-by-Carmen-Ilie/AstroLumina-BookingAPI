@@ -30,7 +30,7 @@ async function migrate() {
 
   try {
     const response = await axios.post(
-      `https://api.cloudflare.com/client/v4/accounts/${D1_ACCOUNT_ID}/d1/${D1_DATABASE_ID}/query`,
+      `https://api.cloudflare.com/client/v4/accounts/${D1_ACCOUNT_ID}/d1/database/${D1_DATABASE_ID}/query`,
       { sql: CREATE_TABLE_SQL },
       {
         headers: {

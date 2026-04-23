@@ -29,7 +29,7 @@ async function queryD1(sql: string, params: unknown[] = []): Promise<D1QueryResu
 
   try {
     const response = await axios.post(
-      `https://api.cloudflare.com/client/v4/accounts/${env.D1_ACCOUNT_ID}/d1/${env.D1_DATABASE_ID}/query`,
+      `https://api.cloudflare.com/client/v4/accounts/${env.D1_ACCOUNT_ID}/d1/database/${env.D1_DATABASE_ID}/query`,
       { sql, params },
       {
         headers: {

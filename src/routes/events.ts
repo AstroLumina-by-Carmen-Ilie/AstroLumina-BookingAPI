@@ -36,7 +36,7 @@ const confirmationSchema = z.object({
 });
 
 router.get(
-  '/seats/:eventId',
+  '/events/seats/:eventId',
   async (req: Request, res: Response, next: NextFunction) => {
     const SentryInstance = Sentry;
 
@@ -65,7 +65,7 @@ router.get(
 );
 
 router.post(
-  '/attendees',
+  '/events/attendees',
   async (req: Request, res: Response, next: NextFunction) => {
     const SentryInstance = Sentry;
 
@@ -103,7 +103,7 @@ router.post(
 );
 
 router.post(
-  '/send-event-confirmation',
+  '/events/send-event-confirmation',
   async (req: Request, res: Response, next: NextFunction) => {
     const SentryInstance = Sentry;
 
