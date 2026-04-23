@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf node_modules && rm -rf dist",
     "render-build": "npm run clean && npm install --include=dev && npm run build",
-    "update-n-build": "npm update --ignore-scripts && npm install --include=dev && npm run build"
+    "update-n-build": "npm update --ignore-scripts && npm install --include=dev && npm run build",
+    "d1:migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
     "@sentry/node": "^10.45.0",
