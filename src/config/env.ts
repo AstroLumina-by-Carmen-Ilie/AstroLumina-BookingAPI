@@ -16,6 +16,11 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().startsWith('re_', 'Must be a valid Resend API key').optional(),
 
   R2_BASE_URL: z.string().url().default('https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs'),
+
+  // Cloudflare D1 Database for event attendees
+  D1_ACCOUNT_ID: z.string().optional(),
+  D1_DATABASE_ID: z.string().optional(),
+  D1_API_TOKEN: z.string().optional(),
 });
 
 function validateEnv() {

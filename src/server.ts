@@ -12,6 +12,7 @@ import eventTypesRouter from './routes/event-types.js';
 import bookingsRouter from './routes/bookings.js';
 import availabilityRouter from './routes/availability.js';
 import emailRouter from './routes/email.js';
+import eventsRouter from './routes/events.js';
 
 const isProduction = env.NODE_ENV === 'production';
 
@@ -40,6 +41,7 @@ app.use(eventTypesRouter);
 app.use(bookingsRouter);
 app.use(availabilityRouter);
 app.use(emailRouter);
+app.use(eventsRouter);
 
 // ─── Error handling ──────────────────────────────────────────
 app.use(payloadTooLargeHandler);
