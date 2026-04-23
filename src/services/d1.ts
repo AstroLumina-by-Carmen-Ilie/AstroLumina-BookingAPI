@@ -3,10 +3,11 @@ import { env } from '../config/env.js';
 
 const MAX_SEATS = 20;
 
-interface D1QueryResult {
-  results: Array<Record<string, unknown>>;
+interface D1Response {
   success: boolean;
+  result?: unknown[];
   errors?: Array<{ code: number; message: string }>;
+  messages?: Array<{ type: string; content: string }>;
 }
 
 export interface Attendee {
@@ -22,13 +23,13 @@ export interface Attendee {
 // In-memory fallback storage when D1 is unavailable
 const inMemoryStorage: Map<string, Attendee[]> = new Map();
 
-async function queryD1(sql: string, params: unknown[] = []): Promise<D1QueryResult> {
+async function queryD1(sql: string, params: unknown[] = []): Promise<D1Response> {
   if (!env.D1_ACCOUNT_ID || !env.D1_DATABASE_ID || !env.D1_API_TOKEN) {
-    throw new Error('D1 not configured: missing D1_ACCOUNT_ID, D1_DATABASE_ID, or D1_API_TOKEN');
+    throw new Error('D1 not configured');
   }
 
   try {
-    const response = await axios.post(
+    const response = await axios.post<D1Response>(
       `https://api.cloudflare.com/client/v4/accounts/${env.D1_ACCOUNT_ID}/d1/database/${env.D1_DATABASE_ID}/query`,
       { sql, params },
       {
@@ -43,7 +44,8 @@ async function queryD1(sql: string, params: unknown[] = []): Promise<D1QueryResu
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(`D1 API error: ${error.response?.data?.errors?.[0]?.message || error.message}`);
+      const message = error.response?.data?.errors?.[0]?.message || error.message;
+      throw new Error(`D1 API error: ${message}`);
     }
     throw error;
   }
@@ -56,14 +58,15 @@ export async function getAvailableSeats(eventId: string): Promise<number> {
       [eventId]
     );
 
-    if (!result.success) {
-      throw new Error('D1 query failed');
+    if (!result.success || !result.result) {
+      throw new Error('D1 query returned invalid response');
     }
 
-    const booked = (result.results[0]?.booked as number) ?? 0;
+    const firstResult = result.result[0] as Record<string, unknown> | undefined;
+    const booked = (firstResult?.booked as number) ?? 0;
     return MAX_SEATS - booked;
   } catch (error) {
-    console.warn('D1 unavailable, using in-memory fallback:', error);
+    console.warn('D1 unavailable, using in-memory fallback');
     // Fallback to in-memory storage
     const attendees = inMemoryStorage.get(eventId) || [];
     return MAX_SEATS - attendees.length;
@@ -77,13 +80,13 @@ export async function getEventAttendees(eventId: string): Promise<Attendee[]> {
       [eventId]
     );
 
-    if (!result.success) {
-      throw new Error('D1 query failed');
+    if (!result.success || !result.result) {
+      throw new Error('D1 query returned invalid response');
     }
 
-    return result.results as unknown as Attendee[];
+    return result.result as unknown as Attendee[];
   } catch (error) {
-    console.warn('D1 unavailable, using in-memory fallback:', error);
+    console.warn('D1 unavailable, using in-memory fallback');
     return inMemoryStorage.get(eventId) || [];
   }
 }
@@ -96,16 +99,34 @@ export async function addAttendee(
   paymentIntentId: string | null
 ): Promise<number> {
   try {
-    await queryD1(
+    const result = await queryD1(
       `INSERT INTO event_attendees (event_id, full_name, email, phone, payment_intent_id)
        VALUES (?, ?, ?, ?, ?)`,
       [eventId, fullName, email, phone, paymentIntentId]
     );
 
-    return 1;
+    if (!result.success) {
+      throw new Error('D1 insert failed');
+    }
+
+    // Add to in-memory for consistency
+    const attendees = inMemoryStorage.get(eventId) || [];
+    const newAttendee: Attendee = {
+      id: Date.now(),
+      event_id: eventId,
+      full_name: fullName,
+      email,
+      phone,
+      payment_intent_id: paymentIntentId,
+      created_at: new Date().toISOString(),
+    };
+    attendees.push(newAttendee);
+    inMemoryStorage.set(eventId, attendees);
+
+    return newAttendee.id;
   } catch (error) {
-    console.warn('D1 unavailable, using in-memory fallback:', error);
-    // Fallback to in-memory storage
+    console.warn('D1 unavailable, using in-memory fallback');
+    // Fallback to in-memory storage only
     const attendees = inMemoryStorage.get(eventId) || [];
     const newAttendee: Attendee = {
       id: Date.now(),
@@ -129,13 +150,13 @@ export async function getAttendeeByPaymentIntent(paymentIntentId: string): Promi
       [paymentIntentId]
     );
 
-    if (!result.success) {
-      throw new Error('D1 query failed');
+    if (!result.success || !result.result) {
+      throw new Error('D1 query returned invalid response');
     }
 
-    return result.results[0] as unknown as Attendee;
+    return result.result[0] as unknown as Attendee;
   } catch (error) {
-    console.warn('D1 unavailable, using in-memory fallback:', error);
+    console.warn('D1 unavailable, using in-memory fallback');
     // Search in-memory storage
     for (const attendees of inMemoryStorage.values()) {
       const found = attendees.find(a => a.payment_intent_id === paymentIntentId);
