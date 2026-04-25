@@ -1,6 +1,6 @@
-import axios from 'axios';
-import { env } from '../config/env.js';
-import { Sentry } from '../instrument.js';
+import axios from "axios";
+import { env } from "../config/env.js";
+import { Sentry } from "../instrument.js";
 
 const MAX_SEATS = 20;
 
@@ -20,11 +20,11 @@ async function queryD1(sql: string, params: unknown[] = []) {
     { sql, params },
     {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${env.D1_API_TOKEN}`,
       },
       timeout: 10000,
-    }
+    },
   );
 
   return response.data;
@@ -32,28 +32,32 @@ async function queryD1(sql: string, params: unknown[] = []) {
 
 export async function getAvailableSeats(eventId: string): Promise<number> {
   const result = await queryD1(
-    'SELECT COUNT(*) as booked FROM event_attendees WHERE event_id = ?',
-    [eventId]
+    "SELECT COUNT(*) as booked FROM event_attendees WHERE event_id = ?",
+    [eventId],
   );
 
   if (!result.success) {
-    Sentry.captureException(new Error('D1 query failed'), { tags: { function: 'getAvailableSeats' } });
-    throw new Error('D1 query failed');
+    Sentry.captureException(new Error("D1 query failed"), {
+      tags: { function: "getAvailableSeats" },
+    });
+    throw new Error("D1 query failed");
   }
 
-  const booked = result.result?.[0]?.booked as number;
+  const booked = (result.result?.[0]?.booked as number) ?? 0;
   return MAX_SEATS - booked;
 }
 
 export async function getEventAttendees(eventId: string): Promise<Attendee[]> {
   const result = await queryD1(
-    'SELECT * FROM event_attendees WHERE event_id = ? ORDER BY created_at DESC',
-    [eventId]
+    "SELECT * FROM event_attendees WHERE event_id = ? ORDER BY created_at DESC",
+    [eventId],
   );
 
   if (!result.success) {
-    Sentry.captureException(new Error('D1 query failed'), { tags: { function: 'getEventAttendees' } });
-    throw new Error('D1 query failed');
+    Sentry.captureException(new Error("D1 query failed"), {
+      tags: { function: "getEventAttendees" },
+    });
+    throw new Error("D1 query failed");
   }
 
   return result.result as unknown as Attendee[];
@@ -64,31 +68,37 @@ export async function addAttendee(
   fullName: string,
   email: string | null,
   phone: string | null,
-  paymentIntentId: string | null
+  paymentIntentId: string | null,
 ): Promise<number> {
   const result = await queryD1(
     `INSERT INTO event_attendees (event_id, full_name, email, phone, payment_intent_id)
      VALUES (?, ?, ?, ?, ?)`,
-    [eventId, fullName, email, phone, paymentIntentId]
+    [eventId, fullName, email, phone, paymentIntentId],
   );
 
   if (!result.success) {
-    Sentry.captureException(new Error('D1 insert failed'), { tags: { function: 'addAttendee' } });
-    throw new Error('D1 insert failed');
+    Sentry.captureException(new Error("D1 insert failed"), {
+      tags: { function: "addAttendee" },
+    });
+    throw new Error("D1 insert failed");
   }
 
   return 1;
 }
 
-export async function getAttendeeByPaymentIntent(paymentIntentId: string): Promise<Attendee | null> {
+export async function getAttendeeByPaymentIntent(
+  paymentIntentId: string,
+): Promise<Attendee | null> {
   const result = await queryD1(
-    'SELECT * FROM event_attendees WHERE payment_intent_id = ? LIMIT 1',
-    [paymentIntentId]
+    "SELECT * FROM event_attendees WHERE payment_intent_id = ? LIMIT 1",
+    [paymentIntentId],
   );
 
   if (!result.success) {
-    Sentry.captureException(new Error('D1 query failed'), { tags: { function: 'getAttendeeByPaymentIntent' } });
-    throw new Error('D1 query failed');
+    Sentry.captureException(new Error("D1 query failed"), {
+      tags: { function: "getAttendeeByPaymentIntent" },
+    });
+    throw new Error("D1 query failed");
   }
 
   return result.result?.[0] as unknown as Attendee;
