@@ -43,7 +43,7 @@ export async function getAvailableSeats(eventId: string): Promise<number> {
     throw new Error("D1 query failed");
   }
 
-  const booked = (result.result?.[0]?.booked as number) ?? 0;
+  const booked = (result.result?.[0]?.results?.[0]?.booked as number) ?? 0;
   return MAX_SEATS - booked;
 }
 
@@ -60,7 +60,7 @@ export async function getEventAttendees(eventId: string): Promise<Attendee[]> {
     throw new Error("D1 query failed");
   }
 
-  return result.result as unknown as Attendee[];
+  return (result.result?.[0]?.results as unknown as Attendee[]) ?? [];
 }
 
 export async function addAttendee(
