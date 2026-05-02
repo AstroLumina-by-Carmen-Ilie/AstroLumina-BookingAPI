@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3031),
+  PORT: z.coerce.number().int().positive().default(3033),
 
   CALCOM_API_KEY: z.string().min(1, 'CALCOM_API_KEY is required'),
   CALCOM_BASE_URL: z.string().url().default('https://api.cal.com'),

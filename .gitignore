@@ -9,6 +9,9 @@ logs
 *.log
 npm-debug.log*
 
+# Certs
+certs
+
 # Runtime data
 pids
 *.pid

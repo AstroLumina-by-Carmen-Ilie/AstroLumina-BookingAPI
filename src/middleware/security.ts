@@ -7,7 +7,7 @@ export const securityHeaders = helmet();
 
 const defaultOrigins = [
   'http://localhost:5173',
-  'http://localhost:3031',
+  'http://localhost:3033',
   'https://astrolumina.pages.dev',
   'https://development.astrolumina.pages.dev',
   'https://carmenilie.com',
