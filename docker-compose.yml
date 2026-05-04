@@ -1,0 +1,34 @@
+services:
+  booking:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/astrolumina-by-carmen-ilie/astrolumina-bookingapi:latest
+    pull_policy: always
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "3033:3033"
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3033/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.125'
+          memory: 128M
+    networks:
+      - booking-api
+
+networks:
+  booking-api:
+    name: booking-api-network
+    driver: bridge

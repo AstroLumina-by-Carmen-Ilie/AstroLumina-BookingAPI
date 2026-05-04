@@ -46,7 +46,7 @@ npm run build
 npm start
 ```
 
-Server runs on `http://localhost:3031` (configurable via `PORT`).
+Server runs on `http://localhost:3033` (configurable via `PORT`).
 
 ## API Endpoints
 
@@ -137,7 +137,7 @@ Returns available booking slots for a given event type and date range.
 **Example:**
 
 ```bash
-curl "http://localhost:3031/api/availability/slots?eventTypeId=5119833&startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
+curl "http://localhost:3033/api/availability/slots?eventTypeId=5119833&startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
 ```
 
 **Response:**
@@ -167,7 +167,7 @@ Convenience endpoint — resolves a session key to a Cal.com event type ID and r
 **Example:**
 
 ```bash
-curl "http://localhost:3031/api/availability/slots/session/astrograma-natala-si-karmica?startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
+curl "http://localhost:3033/api/availability/slots/session/astrograma-natala-si-karmica?startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
 ```
 
 ---
@@ -193,7 +193,7 @@ List bookings with optional filtering.
 **Example:**
 
 ```bash
-curl "http://localhost:3031/api/bookings?status=upcoming&take=10"
+curl "http://localhost:3033/api/bookings?status=upcoming&take=10"
 ```
 
 ---
@@ -334,7 +334,7 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 |----------|----------|---------|-------------|
 | `CALCOM_API_KEY` | Yes | — | Cal.com API key with bookings/write permissions |
 | `CALCOM_BASE_URL` | No | `https://api.cal.com` | Cal.com API base URL |
-| `PORT` | No | `3031` | Server listen port |
+| `PORT` | No | `3033` | Server listen port |
 | `NODE_ENV` | No | `development` | Environment: `development`, `production`, `test` |
 | `CORS_ORIGINS` | No | *(see below)* | Comma-separated allowed CORS origins |
 | `SENTRY_DSN` | No | — | Sentry DSN for error tracking |
@@ -349,7 +349,7 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 The API allows requests from:
 
 - `http://localhost:5173` (Vite dev server)
-- `http://localhost:3031` (Booking API dev)
+- `http://localhost:3033` (Booking API dev)
 - `https://astrolumina.pages.dev`
 - `https://development.astrolumina.pages.dev`
 - `https://carmenilie.com`, `https://www.carmenilie.com`

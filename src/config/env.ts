@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3031),
+  PORT: z.coerce.number().int().positive().default(3033),
 
   CALCOM_API_KEY: z.string().min(1, 'CALCOM_API_KEY is required'),
   CALCOM_BASE_URL: z.string().url().default('https://api.cal.com'),
@@ -15,12 +15,11 @@ const envSchema = z.object({
 
   RESEND_API_KEY: z.string().startsWith('re_', 'Must be a valid Resend API key').optional(),
 
-  R2_BASE_URL: z.string().url().default('https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs'),
+  R2_BASE_URL: z.string().url().min(1, 'R2_BASE_URL is required'),
 
-  // Cloudflare D1 Database for event attendees
-  D1_ACCOUNT_ID: z.string().optional(),
-  D1_DATABASE_ID: z.string().optional(),
-  D1_API_TOKEN: z.string().optional(),
+  D1_ACCOUNT_ID: z.string().min(1, 'D1_ACCOUNT_ID is required'),
+  D1_DATABASE_ID: z.string().min(1, 'D1_DATABASE_ID is required'),
+  D1_API_TOKEN: z.string().min(1, 'D1_API_TOKEN is required'),
 });
 
 function validateEnv() {
