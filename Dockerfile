@@ -34,7 +34,7 @@ ENV NODE_ENV=production
 ENV PORT=3033
 
 LABEL org.opencontainers.image.title="AstroLumina BookingAPI" \
-      org.opencontainers.image.description="Booking API REST server wrapping Cal.com API" \
+      org.opencontainers.image.description="Booking API Express Server" \
       org.opencontainers.image.vendor="AstroLumina" \
       org.opencontainers.image.licenses="MIT"
 
