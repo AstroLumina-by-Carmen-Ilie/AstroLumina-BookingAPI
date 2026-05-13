@@ -46,7 +46,7 @@ npm run build
 npm start
 ```
 
-Server runs on `http://localhost:3033` (configurable via `PORT`).
+Server runs on `http://localhost:<PORT>` (configurable via `BOOKING_API_SERVER_PORT`).
 
 ## API Endpoints
 
@@ -311,7 +311,7 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 
 **Attachment options:**
 - Full URL: `"https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs/chart-123.pdf"`
-- Just filename: `"chart-123.pdf"` (uses R2_BASE_URL)
+- Just filename: `"chart-123.pdf"` (uses `R2_BASE_URL`/pdfs/) 
 
 **Response:**
 
@@ -332,17 +332,16 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
+| `NODE_ENV` | Yes | — | Environment: `development`, `staging`, `production` |
+| `BOOKING_API_SERVER_PORT` | Yes | — | Server listen port |
 | `CALCOM_API_KEY` | Yes | — | Cal.com API key with bookings/write permissions |
-| `CALCOM_BASE_URL` | No | `https://api.cal.com` | Cal.com API base URL |
-| `PORT` | No | `3033` | Server listen port |
-| `NODE_ENV` | No | `development` | Environment: `development`, `production`, `test` |
+| `CALCOM_BASE_URL` | Yes | — | Cal.com API base URL |
+| `BOOKING_API_SENTRY_DSN` | Yes | — | Sentry DSN for error tracking |
 | `CORS_ORIGINS` | No | *(see below)* | Comma-separated allowed CORS origins |
-| `SENTRY_DSN` | No | — | Sentry DSN for error tracking |
-| `SENTRY_RELEASE` | No | — | Sentry release identifier |
-| `RESEND_API_KEY` | No | — | Resend API key for sending emails (starts with `re_`) |
-| `R2_BASE_URL` | No | *(see below)* | Cloudflare R2 base URL for PDF attachments |
+| `RESEND_API_KEY` | Yes | — | Resend API key for sending emails (starts with `re_`) |
+| `R2_BASE_URL` | Yes | — | Cloudflare R2 base URL for PDF attachments (without `/pdfs` path, it's appended automatically) |
 
-**Default R2 Base URL:** `https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs`
+**R2 Base URL:** Cloudflare R2 public bucket URL (without `/pdfs` path)
 
 ### Default CORS Origins
 

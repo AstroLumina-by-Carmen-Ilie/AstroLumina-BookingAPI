@@ -54,8 +54,8 @@ Sentry.setupExpressErrorHandler(app);
 app.use(globalErrorHandler);
 
 // ─── Server startup ──────────────────────────────────────────
-const server = app.listen(env.PORT, () => {
-  console.log(`🚀 Booking API running on http://localhost:${env.PORT}`);
+const server = app.listen(env.BOOKING_API_SERVER_PORT, () => {
+  console.log(`🚀 Booking API running on http://localhost:${env.BOOKING_API_SERVER_PORT}`);
   console.log(`   Environment: ${env.NODE_ENV}`);
   console.log(`   Node: ${process.version}`);
 });

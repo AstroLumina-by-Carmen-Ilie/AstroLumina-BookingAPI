@@ -6,12 +6,21 @@ services:
     image: ghcr.io/astrolumina-by-carmen-ilie/astrolumina-bookingapi:latest
     pull_policy: always
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - BOOKING_API_SERVER_PORT=${BOOKING_API_SERVER_PORT}
+      - BOOKING_API_SENTRY_DSN=${BOOKING_API_SENTRY_DSN}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CALCOM_API_KEY=${CALCOM_API_KEY}
+      - CALCOM_BASE_URL=${CALCOM_BASE_URL}
+      - R2_BASE_URL=${R2_BASE_URL}
+      - D1_ACCOUNT_ID=${D1_ACCOUNT_ID}
+      - D1_DATABASE_ID=${D1_DATABASE_ID}
+      - D1_API_TOKEN=${D1_API_TOKEN}
     ports:
-      - "3033:3033"
+      - "3033:${BOOKING_API_SERVER_PORT}"
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3033/health" ]
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:${BOOKING_API_SERVER_PORT}/health" ]
       interval: 30s
       timeout: 10s
       retries: 3

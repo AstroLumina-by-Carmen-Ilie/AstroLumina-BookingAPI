@@ -2,18 +2,17 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3033),
+  NODE_ENV: z.enum(['development', 'staging', 'production']),
+  BOOKING_API_SERVER_PORT: z.coerce.number().int().positive().min(1, 'BOOKING_API_SERVER_PORT is required'),
 
   CALCOM_API_KEY: z.string().min(1, 'CALCOM_API_KEY is required'),
-  CALCOM_BASE_URL: z.string().url().default('https://api.cal.com'),
+  CALCOM_BASE_URL: z.string().url().min(1, 'CALCOM_BASE_URL is required'),
 
-  SENTRY_DSN: z.string().url().optional(),
-  SENTRY_RELEASE: z.string().optional(),
+  BOOKING_API_SENTRY_DSN: z.string().url().min(1, 'BOOKING_API_SENTRY_DSN is required'),
 
   CORS_ORIGINS: z.string().optional(),
 
-  RESEND_API_KEY: z.string().startsWith('re_', 'Must be a valid Resend API key').optional(),
+  RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
 
   R2_BASE_URL: z.string().url().min(1, 'R2_BASE_URL is required'),
 

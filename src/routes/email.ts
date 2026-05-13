@@ -27,8 +27,6 @@ const emailWithAttachmentsSchema = z.object({
   attachments: z.array(z.string().url()).min(1, 'At least one attachment URL is required'),
 });
 
-const defaultR2BaseUrl = 'https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs';
-
 const emailTemplates = {
   'ghid-saturn': {
     subject: 'Ghidul lui Saturn în Berbec | Download',
@@ -139,7 +137,7 @@ router.post(
         for (const attachmentUrl of attachments) {
           const fullUrl = attachmentUrl.startsWith('http')
             ? attachmentUrl
-            : `${env.R2_BASE_URL || defaultR2BaseUrl}/${attachmentUrl}`;
+            : `${env.R2_BASE_URL}/pdfs/${attachmentUrl}`;
 
           const localPath = await downloadR2ToLocal(fullUrl);
           attachmentFiles.push(localPath);

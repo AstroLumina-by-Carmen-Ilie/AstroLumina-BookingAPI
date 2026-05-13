@@ -4,13 +4,12 @@ import { env } from './config/env.js';
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
-if (env.SENTRY_DSN) {
+if (env.BOOKING_API_SENTRY_DSN) {
   const isProduction = env.NODE_ENV === 'production';
 
-  Sentry.init({
-    dsn: env.SENTRY_DSN,
+Sentry.init({
+    dsn: env.BOOKING_API_SENTRY_DSN,
     environment: env.NODE_ENV,
-    release: env.SENTRY_RELEASE,
 
     sampleRate: 1.0,
     includeLocalVariables: true,
