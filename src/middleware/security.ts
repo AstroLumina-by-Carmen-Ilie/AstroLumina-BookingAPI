@@ -1,21 +1,21 @@
-import helmet from 'helmet';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
-import { env } from '../config/env.js';
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
+import { env } from "../config/env.js";
 
 export const securityHeaders = helmet();
 
 const defaultOrigins = [
   `http://localhost:${env.FRONTEND_SERVER_PORT}`,
   `http://localhost:${env.BOOKING_API_SERVER_PORT}`,
-  'https://astrolumina.pages.dev',
-  'https://development.astrolumina.pages.dev',
-  'https://astrolumina.com',
-  'https://astrolumina.ro'
+  "https://astrolumina.pages.dev",
+  "https://development.astrolumina.pages.dev",
+  "https://astrolumina.com",
+  "https://astrolumina.ro",
 ];
 
 const corsOrigins = env.CORS_ORIGINS
-  ? env.CORS_ORIGINS.split(',').map((s) => s.trim())
+  ? env.CORS_ORIGINS.split(",").map((s) => s.trim())
   : defaultOrigins;
 
 export const corsMiddleware = cors({ origin: corsOrigins });
@@ -25,5 +25,7 @@ export const rateLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests from this IP, please try again after a minute' },
+  message: {
+    error: "Too many requests from this IP, please try again after a minute",
+  },
 });

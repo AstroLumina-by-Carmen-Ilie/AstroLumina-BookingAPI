@@ -25,13 +25,14 @@ The Booking API provides a domain-specific interface over Cal.com's scheduling i
 
 ## Available Sessions
 
-| Session Key | Title | Duration | Price | Description |
-|-------------|-------|----------|-------|-------------|
-| `astrograma-natala-si-karmica` | Astrograma Natală și Karmică | 120 min | €75 | Live birth chart analysis — personality, purpose, talents, blocks, and transgenerational patterns |
-| `astrograma-relationala` | Astrograma Relațională | 90 min | €75 | Relationship dynamics — synastry, compatibility, karmic lessons between two people |
-| `astrograma-previzionala` | Astrograma Previzională | 90 min | €75 | 12-month forecast — favorable periods for career, relationships, decisions |
+| Session Key                    | Title                        | Duration | Price | Description                                                                                       |
+| ------------------------------ | ---------------------------- | -------- | ----- | ------------------------------------------------------------------------------------------------- |
+| `astrograma-natala-si-karmica` | Astrograma Natală și Karmică | 120 min  | €75   | Live birth chart analysis — personality, purpose, talents, blocks, and transgenerational patterns |
+| `astrograma-relationala`       | Astrograma Relațională       | 90 min   | €75   | Relationship dynamics — synastry, compatibility, karmic lessons between two people                |
+| `astrograma-previzionala`      | Astrograma Previzională      | 90 min   | €75   | 12-month forecast — favorable periods for career, relationships, decisions                        |
 
 Each session collects:
+
 - Phone number
 - Birth date (date/month/year)
 - Birth place (city, county, country)
@@ -132,12 +133,12 @@ Returns available booking slots for a given event type and date range.
 
 **Query Parameters:**
 
-| Parameter | Required | Description | Default |
-|-----------|----------|-------------|---------|
-| `eventTypeId` | Yes | Cal.com event type ID | — |
-| `startTime` | Yes | ISO 8601 start of range | — |
-| `endTime` | Yes | ISO 8601 end of range | — |
-| `timeZone` | No | IANA timezone | `Europe/Bucharest` |
+| Parameter     | Required | Description             | Default            |
+| ------------- | -------- | ----------------------- | ------------------ |
+| `eventTypeId` | Yes      | Cal.com event type ID   | —                  |
+| `startTime`   | Yes      | ISO 8601 start of range | —                  |
+| `endTime`     | Yes      | ISO 8601 end of range   | —                  |
+| `timeZone`    | No       | IANA timezone           | `Europe/Bucharest` |
 
 **Example:**
 
@@ -185,15 +186,15 @@ List bookings with optional filtering.
 
 **Query Parameters:**
 
-| Parameter | Description | Values |
-|-----------|-------------|--------|
-| `status` | Filter by booking status | `upcoming`, `past`, `cancelled`, `unconfirmed` |
-| `attendeeEmail` | Filter by attendee email | string |
-| `eventTypeId` | Filter by event type | number |
-| `afterStart` | Bookings starting after this date | ISO 8601 |
-| `beforeEnd` | Bookings ending before this date | ISO 8601 |
-| `take` | Number of results | number |
-| `skip` | Pagination offset | number |
+| Parameter       | Description                       | Values                                         |
+| --------------- | --------------------------------- | ---------------------------------------------- |
+| `status`        | Filter by booking status          | `upcoming`, `past`, `cancelled`, `unconfirmed` |
+| `attendeeEmail` | Filter by attendee email          | string                                         |
+| `eventTypeId`   | Filter by event type              | number                                         |
+| `afterStart`    | Bookings starting after this date | ISO 8601                                       |
+| `beforeEnd`     | Bookings ending before this date  | ISO 8601                                       |
+| `take`          | Number of results                 | number                                         |
+| `skip`          | Pagination offset                 | number                                         |
 
 **Example:**
 
@@ -238,6 +239,7 @@ Create a new booking.
 ```
 
 **Notes:**
+
 - Use either `sessionKey` (recommended) or `eventTypeId` to specify the session type
 - Zoom video link is automatically added as the meeting location
 - Birth chart data is collected via `bookingFieldsResponses`
@@ -292,6 +294,7 @@ Send a templated email.
 ```
 
 **Available templates:**
+
 - `ghid-saturn` — Saturn in Aries guide
 - `soarele-stralucirea-ta` — Sun sign gift
 
@@ -308,15 +311,14 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
   "to": "client@example.com",
   "subject": "Your Birth Chart Analysis",
   "html": "<p>Please find your birth chart analysis attached.</p>",
-  "attachments": [
-    "chart-123.pdf"
-  ]
+  "attachments": ["chart-123.pdf"]
 }
 ```
 
 **Attachment options:**
+
 - Full URL: `"https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs/chart-123.pdf"`
-- Just filename: `"chart-123.pdf"` → uses `R2_BASE_URL/pdfs/` 
+- Just filename: `"chart-123.pdf"` → uses `R2_BASE_URL/pdfs/`
 
 **Response:**
 
@@ -335,20 +337,20 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 
 ### Environment Variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NODE_ENV` | Yes | Environment: `development`, `staging`, `production` |
-| `BOOKING_API_SERVER_PORT` | Yes | Server listen port |
-| `FRONTEND_SERVER_PORT` | Yes | Frontend dev server port (used for CORS) |
-| `CALCOM_API_KEY` | Yes | Cal.com API key with bookings/write permissions |
-| `CALCOM_BASE_URL` | Yes | Cal.com API base URL |
-| `BOOKING_API_SENTRY_DSN` | Yes | Sentry DSN for error tracking |
-| `CORS_ORIGINS` | No | Comma-separated allowed CORS origins (overrides defaults) |
-| `RESEND_API_KEY` | Yes | Resend API key for sending emails |
-| `R2_BASE_URL` | Yes | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
-| `D1_ACCOUNT_ID` | Yes | Cloudflare D1 account ID |
-| `D1_DATABASE_ID` | Yes | Cloudflare D1 database ID |
-| `D1_API_TOKEN` | Yes | Cloudflare D1 API token |
+| Variable                  | Required | Description                                                       |
+| ------------------------- | -------- | ----------------------------------------------------------------- |
+| `NODE_ENV`                | Yes      | Environment: `development`, `staging`, `production`               |
+| `BOOKING_API_SERVER_PORT` | Yes      | Server listen port                                                |
+| `FRONTEND_SERVER_PORT`    | Yes      | Frontend dev server port (used for CORS)                          |
+| `CALCOM_API_KEY`          | Yes      | Cal.com API key with bookings/write permissions                   |
+| `CALCOM_BASE_URL`         | Yes      | Cal.com API base URL                                              |
+| `BOOKING_API_SENTRY_DSN`  | Yes      | Sentry DSN for error tracking                                     |
+| `CORS_ORIGINS`            | No       | Comma-separated allowed CORS origins (overrides defaults)         |
+| `RESEND_API_KEY`          | Yes      | Resend API key for sending emails                                 |
+| `R2_BASE_URL`             | Yes      | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
+| `D1_ACCOUNT_ID`           | Yes      | Cloudflare D1 account ID                                          |
+| `D1_DATABASE_ID`          | Yes      | Cloudflare D1 database ID                                         |
+| `D1_API_TOKEN`            | Yes      | Cloudflare D1 API token                                           |
 
 ### Default CORS Origins
 
@@ -369,11 +371,11 @@ Override with `CORS_ORIGINS` environment variable (comma-separated).
 
 The API uses different Cal.com API versions per resource:
 
-| Resource | API Version |
-|----------|-------------|
-| Event Types | `2024-06-14` |
+| Resource             | API Version  |
+| -------------------- | ------------ |
+| Event Types          | `2024-06-14` |
 | Availability / Slots | `2024-09-04` |
-| Bookings | `2026-02-25` |
+| Bookings             | `2026-02-25` |
 
 ---
 
@@ -409,18 +411,18 @@ src/
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Runtime | Node.js 22.x |
-| Language | TypeScript 5.8 (strict mode) |
-| Framework | Express 5.x (ES Modules) |
-| HTTP Client | Axios |
-| Validation | Zod |
-| Monitoring | Sentry + Profiling |
-| Security | Helmet, CORS, Rate Limiting (30 req/min/IP) |
-| Scheduling | Cal.com API v2 |
-| Email | Resend |
-| Storage | Cloudflare R2 (PDF attachments) |
+| Layer       | Technology                                  |
+| ----------- | ------------------------------------------- |
+| Runtime     | Node.js 22.x                                |
+| Language    | TypeScript 5.8 (strict mode)                |
+| Framework   | Express 5.x (ES Modules)                    |
+| HTTP Client | Axios                                       |
+| Validation  | Zod                                         |
+| Monitoring  | Sentry + Profiling                          |
+| Security    | Helmet, CORS, Rate Limiting (30 req/min/IP) |
+| Scheduling  | Cal.com API v2                              |
+| Email       | Resend                                      |
+| Storage     | Cloudflare R2 (PDF attachments)             |
 
 ---
 

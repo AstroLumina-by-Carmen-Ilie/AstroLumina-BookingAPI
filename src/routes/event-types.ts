@@ -1,6 +1,11 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
-import { calcomService } from '../services/calcom.js';
-import { Sentry } from '../instrument.js';
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
+import { calcomService } from "../services/calcom.js";
+import { Sentry } from "../instrument.js";
 
 const router = Router();
 
@@ -10,18 +15,18 @@ const router = Router();
  * List all Cal.com event types configured for this account.
  */
 router.get(
-  '/api/event-types',
+  "/api/event-types",
   async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const eventTypes = await Sentry.startSpan(
-        { op: 'calcom.event-types', name: 'list-event-types' },
+        { op: "calcom.event-types", name: "list-event-types" },
         async () => calcomService.getEventTypes(),
       );
 
       res.json({ eventTypes });
     } catch (error) {
-      console.error('Error fetching event types:', error);
-      Sentry.captureException(error, { tags: { endpoint: 'event-types' } });
+      console.error("Error fetching event types:", error);
+      Sentry.captureException(error, { tags: { endpoint: "event-types" } });
       next(error);
     }
   },
@@ -33,24 +38,26 @@ router.get(
  * Get a specific event type by ID.
  */
 router.get(
-  '/api/event-types/:id',
+  "/api/event-types/:id",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const id = Number(req.params['id']);
+      const id = Number(req.params["id"]);
       if (Number.isNaN(id)) {
-        res.status(400).json({ error: 'Invalid event type ID' });
+        res.status(400).json({ error: "Invalid event type ID" });
         return;
       }
 
       const eventType = await Sentry.startSpan(
-        { op: 'calcom.event-types', name: 'get-event-type' },
+        { op: "calcom.event-types", name: "get-event-type" },
         async () => calcomService.getEventTypeById(id),
       );
 
       res.json({ eventType });
     } catch (error) {
-      console.error('Error fetching event type:', error);
-      Sentry.captureException(error, { tags: { endpoint: 'event-type-detail' } });
+      console.error("Error fetching event type:", error);
+      Sentry.captureException(error, {
+        tags: { endpoint: "event-type-detail" },
+      });
       next(error);
     }
   },
@@ -63,64 +70,66 @@ router.get(
  * This is the primary endpoint the frontend uses to display available sessions.
  */
 router.get(
-  '/api/sessions',
+  "/api/sessions",
   async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const eventTypes = await Sentry.startSpan(
-        { op: 'calcom.event-types', name: 'list-sessions' },
+        { op: "calcom.event-types", name: "list-sessions" },
         async () => calcomService.getEventTypes(),
       );
 
       const sessionTypes = [
         {
-          key: 'astrograma-natala-si-karmica',
-          title: 'Astrograma Natală și Karmică',
-          slug: 'astrograma-natala-si-karmica',
+          key: "astrograma-natala-si-karmica",
+          title: "Astrograma Natală și Karmică",
+          slug: "astrograma-natala-si-karmica",
           description:
             'Sesiune live în care aducem claritate și direcție prin înțelegerea astrogramei tale! Explorăm împreună harta ta natală – „poza cerului" din momentul nașterii tale. Fiecare planetă vorbește despre o parte din tine, de la felul în care iubești, până la cum îți exprimi talentele sau ce tipare te pot bloca. Include și analiza transgenerațională a hărții tale.',
           durationMinutes: 120,
           price: 75,
-          currency: 'EUR',
-          location: { type: 'integration', integration: 'cal-video' },
+          currency: "EUR",
+          location: { type: "integration", integration: "cal-video" },
           questions: {
-            phone: 'Număr telefon',
-            birthDate: 'Data nașterii (zi/lună/an)',
-            birthPlace: 'Locul nașterii (oraș, județ, țară)',
-            birthTime: 'Ora nașterii (format 24h sau AM/PM specificat)',
+            phone: "Număr telefon",
+            birthDate: "Data nașterii (zi/lună/an)",
+            birthPlace: "Locul nașterii (oraș, județ, țară)",
+            birthTime: "Ora nașterii (format 24h sau AM/PM specificat)",
           },
         },
         {
-          key: 'astrograma-relationala',
-          title: 'Astrograma Relațională',
-          slug: 'astrograma-relationala',
+          key: "astrograma-relationala",
+          title: "Astrograma Relațională",
+          slug: "astrograma-relationala",
           description:
-            'Descoperă dinamicile relației voastre! În această sesiune live, explorăm dinamicile profunde ale relației tale cu partenerul, părinții, copiii, prietenii sau orice altă persoană de interes. Poți solicita o Astrogramă Relațională pentru orice tip de relație - romantică, familială, profesională sau de prietenie.',
+            "Descoperă dinamicile relației voastre! În această sesiune live, explorăm dinamicile profunde ale relației tale cu partenerul, părinții, copiii, prietenii sau orice altă persoană de interes. Poți solicita o Astrogramă Relațională pentru orice tip de relație - romantică, familială, profesională sau de prietenie.",
           durationMinutes: 90,
           price: 75,
-          currency: 'EUR',
-          location: { type: 'integration', integration: 'cal-video' },
+          currency: "EUR",
+          location: { type: "integration", integration: "cal-video" },
           questions: {
-            phone: 'Număr telefon',
-            birthDate: 'Datele tale de naștere (data nașterii, ora și orașul / județul / țara)',
-            birthPlace: 'Datele partener (data nașterii, ora și orașul / județul / țara)',
-            birthTime: '',
+            phone: "Număr telefon",
+            birthDate:
+              "Datele tale de naștere (data nașterii, ora și orașul / județul / țara)",
+            birthPlace:
+              "Datele partener (data nașterii, ora și orașul / județul / țara)",
+            birthTime: "",
           },
         },
         {
-          key: 'astrograma-previzionala',
-          title: 'Astrograma Previzională',
-          slug: 'astrograma-previzionala',
+          key: "astrograma-previzionala",
+          title: "Astrograma Previzională",
+          slug: "astrograma-previzionala",
           description:
-            'Sesiune live în care studiem predispozițiile tale pe următorul an. Această sesiune live îți oferă o privire detaliată asupra predispozițiilor și evenimentelor semnificative din următoarele 12 luni, așa cum se reflectă în harta ta natală.',
+            "Sesiune live în care studiem predispozițiile tale pe următorul an. Această sesiune live îți oferă o privire detaliată asupra predispozițiilor și evenimentelor semnificative din următoarele 12 luni, așa cum se reflectă în harta ta natală.",
           durationMinutes: 90,
           price: 75,
-          currency: 'EUR',
-          location: { type: 'integration', integration: 'cal-video' },
+          currency: "EUR",
+          location: { type: "integration", integration: "cal-video" },
           questions: {
-            phone: 'Număr telefon',
-            birthDate: 'Data nașterii (zi/lună/an)',
-            birthPlace: 'Locul nașterii (oraș, județ, țară)',
-            birthTime: 'Ora nașterii (format 24h sau AM/PM specificat)',
+            phone: "Număr telefon",
+            birthDate: "Data nașterii (zi/lună/an)",
+            birthPlace: "Locul nașterii (oraș, județ, țară)",
+            birthTime: "Ora nașterii (format 24h sau AM/PM specificat)",
           },
         },
       ];
@@ -138,8 +147,8 @@ router.get(
 
       res.json({ sessions: enriched });
     } catch (error) {
-      console.error('Error listing sessions:', error);
-      Sentry.captureException(error, { tags: { endpoint: 'sessions' } });
+      console.error("Error listing sessions:", error);
+      Sentry.captureException(error, { tags: { endpoint: "sessions" } });
       next(error);
     }
   },

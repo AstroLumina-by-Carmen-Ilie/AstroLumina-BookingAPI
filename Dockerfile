@@ -31,9 +31,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./
 
 LABEL org.opencontainers.image.title="AstroLumina BookingAPI" \
-      org.opencontainers.image.description="Booking API Express Server" \
-      org.opencontainers.image.vendor="AstroLumina" \
-      org.opencontainers.image.licenses="MIT"
+    org.opencontainers.image.description="Booking API Express Server" \
+    org.opencontainers.image.vendor="AstroLumina" \
+    org.opencontainers.image.licenses="MIT"
 
 RUN chown -R nodejs:nodejs /app
 USER nodejs

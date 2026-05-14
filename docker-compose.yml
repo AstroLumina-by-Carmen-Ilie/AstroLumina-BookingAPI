@@ -21,7 +21,14 @@ services:
     ports:
       - "${BOOKING_API_SERVER_PORT}:${BOOKING_API_SERVER_PORT}"
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:${BOOKING_API_SERVER_PORT}/health" ]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://localhost:${BOOKING_API_SERVER_PORT}/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -30,10 +37,10 @@ services:
       replicas: 1
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 1G
         reservations:
-          cpus: '0.125'
+          cpus: "0.125"
           memory: 128M
     networks:
       - booking-api

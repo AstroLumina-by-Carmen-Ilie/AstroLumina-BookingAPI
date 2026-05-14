@@ -1,12 +1,14 @@
-import axios from 'axios';
-import 'dotenv/config';
+import axios from "axios";
+import "dotenv/config";
 
 const D1_ACCOUNT_ID = process.env.D1_ACCOUNT_ID;
 const D1_DATABASE_ID = process.env.D1_DATABASE_ID;
 const D1_API_TOKEN = process.env.D1_API_TOKEN;
 
 if (!D1_ACCOUNT_ID || !D1_DATABASE_ID || !D1_API_TOKEN) {
-  console.error('Missing D1 config: D1_ACCOUNT_ID, D1_DATABASE_ID, D1_API_TOKEN');
+  console.error(
+    "Missing D1 config: D1_ACCOUNT_ID, D1_DATABASE_ID, D1_API_TOKEN",
+  );
   process.exit(1);
 }
 
@@ -26,7 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_payment_intent ON event_attendees(payment_intent_
 `;
 
 async function migrate() {
-  console.log('Running D1 migration...');
+  console.log("Running D1 migration...");
 
   try {
     const response = await axios.post(
@@ -34,20 +36,20 @@ async function migrate() {
       { sql: CREATE_TABLE_SQL },
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${D1_API_TOKEN}`,
         },
-      }
+      },
     );
 
     if (response.data.success) {
-      console.log('Table event_attendees created successfully');
+      console.log("Table event_attendees created successfully");
     } else {
-      console.error('Migration failed:', response.data.errors);
+      console.error("Migration failed:", response.data.errors);
       process.exit(1);
     }
   } catch (error) {
-    console.error('Migration error:', error);
+    console.error("Migration error:", error);
     process.exit(1);
   }
 }

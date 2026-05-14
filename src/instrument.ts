@@ -1,13 +1,13 @@
 // instrument.ts — must be imported before all other modules
-import { env } from './config/env.js';
+import { env } from "./config/env.js";
 
-import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import * as Sentry from "@sentry/node";
+import { nodeProfilingIntegration } from "@sentry/profiling-node";
 
 if (env.BOOKING_API_SENTRY_DSN) {
-  const isProduction = env.NODE_ENV === 'production';
+  const isProduction = env.NODE_ENV === "production";
 
-Sentry.init({
+  Sentry.init({
     dsn: env.BOOKING_API_SENTRY_DSN,
     environment: env.NODE_ENV,
 
@@ -16,17 +16,17 @@ Sentry.init({
     maxBreadcrumbs: 100,
 
     tracesSampler: (samplingContext) => {
-      if (samplingContext?.transactionContext?.name?.includes('/health')) {
+      if (samplingContext?.transactionContext?.name?.includes("/health")) {
         return 0.01;
       }
-      if (samplingContext?.transactionContext?.name?.includes('/api/')) {
+      if (samplingContext?.transactionContext?.name?.includes("/api/")) {
         return isProduction ? 0.2 : 1.0;
       }
       return isProduction ? 0.1 : 1.0;
     },
 
     tracePropagationTargets: [
-      'localhost',
+      "localhost",
       /^https:\/\/api\.cal\.com/,
       /^https:\/\/astrolumina\.pages\.dev/,
       /^https:\/\/.*\.carmenilie\.com/,
@@ -36,11 +36,11 @@ Sentry.init({
     integrations: [
       // @ts-expect-error — version mismatch between @sentry/node 10.x and @sentry/profiling-node 8.x
       nodeProfilingIntegration(),
-      Sentry.captureConsoleIntegration({ levels: ['error', 'warn'] }),
+      Sentry.captureConsoleIntegration({ levels: ["error", "warn"] }),
       Sentry.anrIntegration({ captureStackTrace: true }),
     ],
     profileSessionSampleRate: isProduction ? 0.1 : 1.0,
-    profileLifecycle: 'trace',
+    profileLifecycle: "trace",
 
     sendDefaultPii: true,
 
@@ -49,8 +49,11 @@ Sentry.init({
         for (const exception of event.exception.values) {
           if (exception.value) {
             exception.value = exception.value
-              .replace(/cal_live_[a-zA-Z0-9_]+/g, 'cal_live_[REDACTED]')
-              .replace(/CALCOM_API_KEY['":\s]*['"]?[\w-]+['"]?/gi, 'CALCOM_API_KEY=[REDACTED]');
+              .replace(/cal_live_[a-zA-Z0-9_]+/g, "cal_live_[REDACTED]")
+              .replace(
+                /CALCOM_API_KEY['":\s]*['"]?[\w-]+['"]?/gi,
+                "CALCOM_API_KEY=[REDACTED]",
+              );
           }
         }
       }
@@ -58,15 +61,15 @@ Sentry.init({
     },
 
     beforeSendSpan: (span) => {
-      span.data = { ...span.data, 'service.name': 'astrolumina-booking-api' };
+      span.data = { ...span.data, "service.name": "astrolumina-booking-api" };
       return span;
     },
 
     initialScope: {
       tags: {
-        service: 'astrolumina-booking-api',
-        runtime: 'node.js',
-        framework: 'express',
+        service: "astrolumina-booking-api",
+        runtime: "node.js",
+        framework: "express",
       },
     },
 
