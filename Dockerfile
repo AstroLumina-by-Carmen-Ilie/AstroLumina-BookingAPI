@@ -37,6 +37,5 @@ LABEL org.opencontainers.image.title="AstroLumina BookingAPI" \
 
 RUN chown -R nodejs:nodejs /app
 USER nodejs
-EXPOSE 3033
 
 CMD ["node", "dist/server.js"]

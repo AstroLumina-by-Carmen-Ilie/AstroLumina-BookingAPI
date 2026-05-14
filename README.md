@@ -1,11 +1,16 @@
 # AstroLumina Booking API
 
-REST API for managing **Cal.com** bookings — session scheduling, availability checking, and booking lifecycle management for the AstroLumina astrological services platform.
+A production-ready Express API that orchestrates Cal.com bookings, sends emails via Resend, stores data in Cloudflare D1, and serves PDF attachments from Cloudflare R2 — all secrets managed by Doppler.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![Express](https://img.shields.io/badge/Express-5.x-green.svg)](https://expressjs.com/)
 [![Node](https://img.shields.io/badge/Node.js-22+-green.svg)](https://nodejs.org/)
 [![Cal.com](https://img.shields.io/badge/Cal.com-v2-111827.svg)](https://cal.com/)
+[![Sentry](https://img.shields.io/badge/Sentry-10.x-orange.svg)](https://sentry.io/)
+[![Resend](https://img.shields.io/badge/Resend-Email-ffffff.svg?style=flat&labelColor=000000)](https://resend.com/)
+[![Cloudflare D1](https://img.shields.io/badge/Cloudflare-D1-橙色.svg?logo=cloudflare&logoColor=orange)](https://developers.cloudflare.com/d1/)
+[![Cloudflare R2](https://img.shields.io/badge/Cloudflare-R2-blue.svg?logo=cloudflare)](https://developers.cloudflare.com/r2/)
+[![Doppler](https://img.shields.io/badge/Doppler-Secrets-00D1C7.svg)](https://doppler.com/)
 
 ## Overview
 
@@ -137,7 +142,7 @@ Returns available booking slots for a given event type and date range.
 **Example:**
 
 ```bash
-curl "http://localhost:3033/api/availability/slots?eventTypeId=5119833&startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
+curl "http://localhost:<PORT>/api/availability/slots?eventTypeId=5119833&startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
 ```
 
 **Response:**
@@ -167,7 +172,7 @@ Convenience endpoint — resolves a session key to a Cal.com event type ID and r
 **Example:**
 
 ```bash
-curl "http://localhost:3033/api/availability/slots/session/astrograma-natala-si-karmica?startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
+curl "http://localhost:<PORT>/api/availability/slots/session/astrograma-natala-si-karmica?startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
 ```
 
 ---
@@ -193,7 +198,7 @@ List bookings with optional filtering.
 **Example:**
 
 ```bash
-curl "http://localhost:3033/api/bookings?status=upcoming&take=10"
+curl "http://localhost:<PORT>/api/bookings?status=upcoming&take=10"
 ```
 
 ---
@@ -311,7 +316,7 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 
 **Attachment options:**
 - Full URL: `"https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs/chart-123.pdf"`
-- Just filename: `"chart-123.pdf"` (uses `R2_BASE_URL`/pdfs/) 
+- Just filename: `"chart-123.pdf"` → uses `R2_BASE_URL/pdfs/` 
 
 **Response:**
 
@@ -330,32 +335,33 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 
 ### Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NODE_ENV` | Yes | — | Environment: `development`, `staging`, `production` |
-| `BOOKING_API_SERVER_PORT` | Yes | — | Server listen port |
-| `CALCOM_API_KEY` | Yes | — | Cal.com API key with bookings/write permissions |
-| `CALCOM_BASE_URL` | Yes | — | Cal.com API base URL |
-| `BOOKING_API_SENTRY_DSN` | Yes | — | Sentry DSN for error tracking |
-| `CORS_ORIGINS` | No | *(see below)* | Comma-separated allowed CORS origins |
-| `RESEND_API_KEY` | Yes | — | Resend API key for sending emails (starts with `re_`) |
-| `R2_BASE_URL` | Yes | — | Cloudflare R2 base URL for PDF attachments (without `/pdfs` path, it's appended automatically) |
-
-**R2 Base URL:** Cloudflare R2 public bucket URL (without `/pdfs` path)
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NODE_ENV` | Yes | Environment: `development`, `staging`, `production` |
+| `BOOKING_API_SERVER_PORT` | Yes | Server listen port |
+| `FRONTEND_SERVER_PORT` | Yes | Frontend dev server port (used for CORS) |
+| `CALCOM_API_KEY` | Yes | Cal.com API key with bookings/write permissions |
+| `CALCOM_BASE_URL` | Yes | Cal.com API base URL |
+| `BOOKING_API_SENTRY_DSN` | Yes | Sentry DSN for error tracking |
+| `CORS_ORIGINS` | No | Comma-separated allowed CORS origins (overrides defaults) |
+| `RESEND_API_KEY` | Yes | Resend API key for sending emails |
+| `R2_BASE_URL` | Yes | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
+| `D1_ACCOUNT_ID` | Yes | Cloudflare D1 account ID |
+| `D1_DATABASE_ID` | Yes | Cloudflare D1 database ID |
+| `D1_API_TOKEN` | Yes | Cloudflare D1 API token |
 
 ### Default CORS Origins
 
-The API allows requests from:
+When `CORS_ORIGINS` is not set, the API allows:
 
-- `http://localhost:5173` (Vite dev server)
-- `http://localhost:3033` (Booking API dev)
+- `http://localhost:<FRONTEND_SERVER_PORT>`
+- `http://localhost:<BOOKING_API_SERVER_PORT>`
 - `https://astrolumina.pages.dev`
 - `https://development.astrolumina.pages.dev`
-- `https://carmenilie.com`, `https://www.carmenilie.com`
-- `https://carmenilieastrolog.com`, `https://www.carmenilieastrolog.com`
-- `https://astrolumina.com`, `https://www.astrolumina.com`
+- `https://astrolumina.com`
+- `https://astrolumina.ro`
 
-Override with `CORS_ORIGINS` environment variable.
+Override with `CORS_ORIGINS` environment variable (comma-separated).
 
 ---
 
@@ -386,9 +392,13 @@ src/
 │   ├── event-types.ts          # Event types + sessions listing
 │   ├── bookings.ts             # Booking CRUD + reschedule + cancel
 │   ├── availability.ts         # Available slots lookup
-│   └── email.ts                # Email sending with R2 attachments
+│   ├── email.ts                # Email sending with R2 attachments
+│   └── events.ts               # Webhook handler for Cal.com events
 ├── services/
-│   └── calcom.ts               # Cal.com API client (axios)
+│   ├── calcom.ts               # Cal.com API client (axios)
+│   └── d1.ts                   # Cloudflare D1 client
+├── db/
+│   └── migrate.ts              # D1 database migrations
 ├── types/
 │   └── calcom.ts               # Cal.com TypeScript interfaces
 ├── instrument.ts               # Sentry initialization
@@ -418,7 +428,7 @@ src/
 
 - **Helmet** — Secure HTTP headers (X-Content-Type-Options, X-Frame-Options, etc.)
 - **Rate limiting** — 30 requests/minute/IP (configurable)
-- **CORS** — Explicit origin whitelist
+- **CORS** — Configurable origin whitelist via `CORS_ORIGINS` env var
 - **Request body limit** — 1MB max (413 Payload Too Large on exceed)
 - **Zod validation** — Input validation at every endpoint
 - **Environment validation** — App fails fast with clear errors if config invalid
@@ -438,17 +448,6 @@ npm run build
 # Clean reinstall
 npm run clean && npm install
 ```
-
----
-
-## Part of AstroLumina
-
-| Service | Port | Repository |
-|---------|------|------------|
-| Astrology API | 3031 | `AstroLumina-AstrologyAPI` |
-| Payment API | 3032 | `AstroLumina-PaymentAPI` |
-| Booking API | 3033 | `AstroLumina-BookingAPI` |
-| Frontend | 5173 | `AstroLumina-Frontend` |
 
 ---
 

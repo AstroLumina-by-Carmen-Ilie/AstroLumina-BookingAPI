@@ -6,16 +6,12 @@ import { env } from '../config/env.js';
 export const securityHeaders = helmet();
 
 const defaultOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3033',
+  `http://localhost:${env.FRONTEND_SERVER_PORT}`,
+  `http://localhost:${env.BOOKING_API_SERVER_PORT}`,
   'https://astrolumina.pages.dev',
   'https://development.astrolumina.pages.dev',
-  'https://carmenilie.com',
-  'https://www.carmenilie.com',
-  'https://carmenilieastrolog.com',
-  'https://www.carmenilieastrolog.com',
   'https://astrolumina.com',
-  'https://www.astrolumina.com',
+  'https://astrolumina.ro'
 ];
 
 const corsOrigins = env.CORS_ORIGINS

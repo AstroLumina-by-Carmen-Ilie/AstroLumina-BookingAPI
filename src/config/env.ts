@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'staging', 'production']),
-  BOOKING_API_SERVER_PORT: z.coerce.number().int().positive().min(1, 'BOOKING_API_SERVER_PORT is required'),
+  BOOKING_API_SERVER_PORT: z.coerce.number().int().positive().min(1),
+  FRONTEND_SERVER_PORT: z.coerce.number().int().positive().min(1),
 
   CALCOM_API_KEY: z.string().min(1, 'CALCOM_API_KEY is required'),
   CALCOM_BASE_URL: z.string().url().min(1, 'CALCOM_BASE_URL is required'),

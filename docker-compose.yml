@@ -9,6 +9,7 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV}
       - BOOKING_API_SERVER_PORT=${BOOKING_API_SERVER_PORT}
+      - FRONTEND_SERVER_PORT=${FRONTEND_SERVER_PORT}
       - BOOKING_API_SENTRY_DSN=${BOOKING_API_SENTRY_DSN}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - CALCOM_API_KEY=${CALCOM_API_KEY}
@@ -18,7 +19,7 @@ services:
       - D1_DATABASE_ID=${D1_DATABASE_ID}
       - D1_API_TOKEN=${D1_API_TOKEN}
     ports:
-      - "3033:${BOOKING_API_SERVER_PORT}"
+      - "${BOOKING_API_SERVER_PORT}:${BOOKING_API_SERVER_PORT}"
     healthcheck:
       test: [ "CMD", "wget", "--spider", "-q", "http://localhost:${BOOKING_API_SERVER_PORT}/health" ]
       interval: 30s
