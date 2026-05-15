@@ -367,7 +367,6 @@ Override with `CORS_ORIGINS` environment variable (comma-separated).
 
 ---
 
-
 ## Cal.com API Versions
 
 The API uses different Cal.com API versions per resource:
