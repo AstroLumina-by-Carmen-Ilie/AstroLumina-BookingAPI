@@ -1,5 +1,5 @@
 services:
-  booking:
+  booking-api:
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,7 +9,9 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV}
       - BOOKING_API_SERVER_PORT=${BOOKING_API_SERVER_PORT}
+      - BOOKING_API_SERVER_DNS=${BOOKING_API_SERVER_DNS}
       - FRONTEND_SERVER_PORT=${FRONTEND_SERVER_PORT}
+      - FRONTEND_SERVER_DNS=${FRONTEND_SERVER_DNS}
       - BOOKING_API_SENTRY_DSN=${BOOKING_API_SENTRY_DSN}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - CALCOM_API_KEY=${CALCOM_API_KEY}
