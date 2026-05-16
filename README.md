@@ -8,22 +8,25 @@ A production-ready Express API that orchestrates Cal.com bookings, sends emails 
 [![Cal.com](https://img.shields.io/badge/Cal.com-v2-111827.svg)](https://cal.com/)
 [![Sentry](https://img.shields.io/badge/Sentry-10.x-orange.svg)](https://sentry.io/)
 [![Resend](https://img.shields.io/badge/Resend-Email-ffffff.svg?style=flat&labelColor=000000)](https://resend.com/)
-[![Cloudflare D1](https://img.shields.io/badge/Cloudflare-D1-橙色.svg?logo=cloudflare&logoColor=orange)](https://developers.cloudflare.com/d1/)
+[![Cloudflare D1](https://img.shields.io/badge/Cloudflare-D1-orange.svg?logo=cloudflare&logoColor=orange)](https://developers.cloudflare.com/d1/)
 [![Cloudflare R2](https://img.shields.io/badge/Cloudflare-R2-blue.svg?logo=cloudflare)](https://developers.cloudflare.com/r2/)
 [![Doppler](https://img.shields.io/badge/Doppler-Secrets-00D1C7.svg)](https://doppler.com/)
 
-## Overview
+---
 
-The Booking API provides a domain-specific interface over Cal.com's scheduling infrastructure, enabling customers to self-serve book astrological consultation sessions with:
+## Features
 
-- Real-time availability checking
-- Session type catalog with descriptions
-- Full booking lifecycle (create, reschedule, cancel)
-- Automatic Zoom integration for video sessions
-- Birth chart data collection during booking
-- Sentry error tracking + profiling
+- **Cal.com integration** — full booking lifecycle (create, reschedule, cancel) with automatic Zoom video links
+- **Session catalog** — 3 astrological consultation types with real-time availability checking
+- **Email delivery** — templated emails via Resend with PDF attachments from R2 storage
+- **Cloudflare D1** — SQLite database for persistent booking data
+- **Cloudflare R2** — object storage for PDF attachments (auto-download, attach, cleanup)
+- **Webhook handling** — Cal.com event webhooks for real-time sync
+- **Zod validation** — input validation at every endpoint with type-safe schemas
+- **Environment validation** — app fails fast with clear errors if config is invalid
+- **Sentry monitoring** — error tracking + CPU profiling
 
-## Available Sessions
+### Available Sessions
 
 | Session Key                    | Title                        | Duration | Price | Description                                                                                       |
 | ------------------------------ | ---------------------------- | -------- | ----- | ------------------------------------------------------------------------------------------------- |
@@ -31,14 +34,217 @@ The Booking API provides a domain-specific interface over Cal.com's scheduling i
 | `astrograma-relationala`       | Astrograma Relațională       | 90 min   | €75   | Relationship dynamics — synastry, compatibility, karmic lessons between two people                |
 | `astrograma-previzionala`      | Astrograma Previzională      | 90 min   | €75   | 12-month forecast — favorable periods for career, relationships, decisions                        |
 
-Each session collects:
+Each session collects: phone number, birth date, birth place, and birth time.
 
-- Phone number
-- Birth date (date/month/year)
-- Birth place (city, county, country)
-- Birth time (24h format or AM/PM)
+---
 
-## Quick Start
+## Security
+
+| Feature           | Implementation                                              |
+| ----------------- | ----------------------------------------------------------- |
+| **HTTP Headers**  | Helmet (CSP, HSTS, X-Frame-Options, etc.)                   |
+| **Rate Limiting** | 30 requests/minute per IP                                   |
+| **CORS**          | Dynamic whitelist built from `*_SERVER_PORT` / `*_SERVER_DNS` env vars (Astrology, Booking, Payment, Frontend services) + Cloudflare Pages domains (`astrolumina.pages.dev`, `development.astrolumina.pages.dev`, `astrolumina.com`, `astrolumina.ro`). Override via `CORS_ORIGINS`. |
+| **Request Size**  | Max 1MB body (returns `413` if exceeded)                    |
+| **PII Scrubbing** | Sentry automatically redacts API keys from error reports    |
+| **Input Validation** | Zod schemas on all endpoint inputs                       |
+| **Environment Validation** | Zod-validated env.ts — app refuses to start with missing required vars |
+| **Secrets Management** | All secrets (Cal.com API key, Resend key, D1/R2 credentials) managed via Doppler |
+
+---
+
+## Tech Stack
+
+| Layer       | Technology                                  |
+| ----------- | ------------------------------------------- |
+| **Runtime**     | Node.js 22.x                                |
+| **Language**    | TypeScript 5.8 (strict mode, ESM)           |
+| **Framework**   | Express 5.x                                 |
+| **HTTP Client** | Axios                                       |
+| **Validation**  | Zod                                         |
+| **Monitoring**  | Sentry 10.x (with profiling)                |
+| **Security**    | Helmet, CORS, Rate Limiting (30 req/min/IP) |
+| **Scheduling**  | Cal.com API v2                              |
+| **Email**       | Resend                                      |
+| **Database**    | Cloudflare D1 (SQLite)                      |
+| **Storage**     | Cloudflare R2 (PDF attachments)             |
+| **Secrets**     | Doppler                                     |
+| **Container**   | Docker, Docker Compose                      |
+
+---
+
+## Project Structure
+
+```
+.
+├── .github/
+│   └── workflows/           # CI/CD pipelines
+│       └── build-deploy.yml  # Docker image build & push
+├── src/
+│   ├── server.ts            # Express entry point + graceful shutdown
+│   ├── instrument.ts        # Sentry initialization (imported first)
+│   ├── config/
+│   │   ├── env.ts           # Zod-based environment validation
+│   │   └── session-slugs.ts # Session key → Cal.com slug mapping
+│   ├── middleware/
+│   │   ├── security.ts      # Helmet, CORS, rate limiter
+│   │   └── error-handler.ts # Custom error types + global handler (Axios/Cal.com aware)
+│   ├── routes/
+│   │   ├── health.ts        # GET /health
+│   │   ├── event-types.ts   # Event types + sessions listing
+│   │   ├── bookings.ts      # Booking CRUD + reschedule + cancel
+│   │   ├── availability.ts  # Available slots lookup
+│   │   ├── email.ts         # Email sending with R2 attachments
+│   │   └── events.ts        # Webhook handler for Cal.com events
+│   ├── services/
+│   │   ├── calcom.ts        # Cal.com API client (axios)
+│   │   └── d1.ts            # Cloudflare D1 client
+│   ├── db/
+│   │   └── migrate.ts       # D1 database migrations
+│   └── types/
+│       └── calcom.ts        # Cal.com TypeScript interfaces
+├── dist/                    # Compiled output (gitignored)
+├── docker-compose.yml       # Single-service deployment
+├── Dockerfile               # Multi-stage build
+├── VERSION.json             # Version config
+├── .dockerignore
+├── .env.example             # Environment variables template (not committed)
+├── tsconfig.json
+└── package.json
+```
+
+---
+
+## Architecture
+
+The BookingAPI is a **single-service** deployment that orchestrates multiple external services:
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    Frontend (React)                              │
+└────────────────────────┬─────────────────────────────────────────┘
+                         │ GET/POST /api/*
+                         ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                 BookingAPI (1 replica)                           │
+│  ┌────────────┐  ┌────────────┐  ┌────────────────────────────┐ │
+│  │  Security  │→ │  Routes    │→ │  External Services         │ │
+│  │  (Helmet,  │  │  (Zod      │  │                            │ │
+│  │  CORS,     │  │  validate) │  │  ┌─────────────────────┐   │ │
+│  │  Rate Lim) │  └────────────┘  │  │ Cal.com API         │   │ │
+│  └────────────┘        │         │  │ (scheduling, Zoom)  │   │ │
+│                        ▼         │  └─────────────────────┘   │ │
+│                 Orchestrator     │  ┌─────────────────────┐   │ │
+│                 (bookings,       │  │ Resend              │   │ │
+│                  email, D1, R2)  │  │ (templated emails)  │   │ │
+│                        │         │  └─────────────────────┘   │ │
+│                        ▼         │  ┌─────────────────────┐   │ │
+│                 Data Layer       │  │ Cloudflare D1       │   │ │
+│                 (D1 SQLite,      │  │ (persistent data)   │   │ │
+│                  R2 PDFs)        │  └─────────────────────┘   │ │
+│                                  │  ┌─────────────────────┐   │ │
+│  • healthcheck: /health every 30s│  │ Cloudflare R2       │   │ │
+│  • resources: 0.125–1 CPU,      │  │ (PDF storage)       │   │ │
+│    128M–1G RAM                  │  └─────────────────────┘   │ │
+│  • Sentry error tracking        │                            │ │
+│    + profiling                  └────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Cal.com API Versions
+
+| Resource             | API Version  |
+| -------------------- | ------------ |
+| Event Types          | `2024-06-14` |
+| Availability / Slots | `2024-09-04` |
+| Bookings             | `2026-02-25` |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `NODE_ENV` | Yes | — | Environment: `development`, `staging`, `production` |
+| `ASTROLOGY_API_SERVER_PORT` | Yes | — | Astrology API server port |
+| `ASTROLOGY_API_SERVER_DNS` | Yes | — | Astrology API server DNS name |
+| `BOOKING_API_SERVER_PORT` | Yes | — | Booking API server port |
+| `BOOKING_API_SERVER_DNS` | Yes | — | Booking API server DNS name |
+| `PAYMENT_API_SERVER_PORT` | Yes | — | Payment API server port |
+| `PAYMENT_API_SERVER_DNS` | Yes | — | Payment API server DNS name |
+| `FRONTEND_SERVER_PORT` | Yes | — | Frontend dev server port |
+| `FRONTEND_SERVER_DNS` | Yes | — | Frontend server DNS name |
+| `BOOKING_API_SENTRY_DSN` | Yes | — | Sentry DSN for error tracking |
+| `CORS_ORIGINS` | No | _(dynamic defaults)_ | Comma-separated allowed CORS origins (overrides defaults) |
+| `RESEND_API_KEY` | Yes | — | Resend API key for sending emails |
+| `CALCOM_API_KEY` | Yes | — | Cal.com API key with bookings/write permissions |
+| `CALCOM_BASE_URL` | Yes | — | Cal.com API base URL |
+| `R2_BASE_URL` | Yes | — | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
+| `D1_ACCOUNT_ID` | Yes | — | Cloudflare D1 account ID |
+| `D1_DATABASE_ID` | Yes | — | Cloudflare D1 database ID |
+| `D1_API_TOKEN` | Yes | — | Cloudflare D1 API token |
+
+### Default CORS Origins
+
+When `CORS_ORIGINS` is not set, the API allows requests from all 4 services (Frontend, Astrology API, Booking API, Payment API) on localhost, HTTP, and HTTPS variants, plus:
+
+- `https://astrolumina.pages.dev`
+- `https://development.astrolumina.pages.dev`
+- `https://astrolumina.com`
+- `https://astrolumina.ro`
+
+---
+
+## Deployment
+
+### Docker Compose
+
+```bash
+# Build and start the service
+docker compose up -d
+
+# View logs
+docker compose logs -f booking-api
+
+# Stop services
+docker compose down
+```
+
+### Manual Docker Build
+
+```bash
+# Build image
+docker build -t astrolumina-booking-api:latest .
+
+# Run container
+docker run -p <PORT>:<PORT> --env-file .env astrolumina-booking-api:latest
+```
+
+### Render
+
+```text
+Build Command:  npm run render-build
+Start Command:  npm start
+Node Version:    22.x
+```
+
+### Image Registry
+
+Images are automatically built and pushed to GitHub Container Registry:
+
+```
+ghcr.io/astrolumina-by-carmen-ilie/astrolumina-bookingapi:latest
+ghcr.io/astrolumina-by-carmen-ilie/astrolumina-bookingapi:v1.0.0
+```
+
+### CI/CD Pipeline
+
+Triggered on **PR merge to `main`**:
+
+1. **Auto-version** — Reads `VERSION.json` for major/minor, increments patch, creates and pushes a git tag
+2. **Docker build** — Builds image from the new tag and pushes to GitHub Container Registry
+
+### Local Development
 
 ```bash
 # Install dependencies
@@ -47,6 +253,9 @@ npm install
 # Development (auto-reload with tsx)
 npm run dev
 
+# Type checking
+npm run typecheck
+
 # Production build
 npm run build
 npm start
@@ -54,13 +263,13 @@ npm start
 
 Server runs on `http://localhost:<PORT>` (configurable via `BOOKING_API_SERVER_PORT`).
 
-## API Endpoints
+---
 
-### Health Check
+## Endpoints
 
-#### `GET /health`
+### `GET /health`
 
-Server status endpoint - returns uptime, memory usage, node version, and environment.
+Server status endpoint — returns uptime, memory usage, node version, and environment.
 
 **Response:**
 
@@ -77,8 +286,6 @@ Server status endpoint - returns uptime, memory usage, node version, and environ
   "environment": "development"
 }
 ```
-
----
 
 ### Session Types
 
@@ -113,8 +320,6 @@ Lists the 3 AstroLumina session types with their Cal.com event type status. The 
 }
 ```
 
----
-
 #### `GET /api/event-types`
 
 Lists all Cal.com event types on the account.
@@ -123,11 +328,9 @@ Lists all Cal.com event types on the account.
 
 Get a specific event type by Cal.com ID.
 
----
-
 ### Availability
 
-#### `GET /api/availability/slots?eventTypeId=...&startTime=...&endTime=...`
+#### `GET /api/availability/slots`
 
 Returns available booking slots for a given event type and date range.
 
@@ -146,37 +349,11 @@ Returns available booking slots for a given event type and date range.
 curl "http://localhost:<PORT>/api/availability/slots?eventTypeId=5119833&startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
 ```
 
-**Response:**
-
-```json
-{
-  "slots": {
-    "2026-04-21": [
-      { "start": "2026-04-21T09:00:00Z", "end": "2026-04-21T11:00:00Z" },
-      { "start": "2026-04-21T14:00:00Z", "end": "2026-04-21T16:00:00Z" }
-    ],
-    "2026-04-22": [
-      { "start": "2026-04-22T10:00:00Z", "end": "2026-04-22T12:00:00Z" }
-    ]
-  }
-}
-```
-
----
-
 #### `GET /api/availability/slots/session/:sessionKey`
 
 Convenience endpoint — resolves a session key to a Cal.com event type ID and returns available slots.
 
 **Valid session keys:** `astrograma-natala-si-karmica`, `astrograma-relationala`, `astrograma-previzionala`
-
-**Example:**
-
-```bash
-curl "http://localhost:<PORT>/api/availability/slots/session/astrograma-natala-si-karmica?startTime=2026-04-20T00:00:00Z&endTime=2026-04-27T23:59:59Z"
-```
-
----
 
 ### Bookings
 
@@ -196,19 +373,9 @@ List bookings with optional filtering.
 | `take`          | Number of results                 | number                                         |
 | `skip`          | Pagination offset                 | number                                         |
 
-**Example:**
-
-```bash
-curl "http://localhost:<PORT>/api/bookings?status=upcoming&take=10"
-```
-
----
-
 #### `GET /api/bookings/:uid`
 
 Get a specific booking by its Cal.com UID.
-
----
 
 #### `POST /api/bookings`
 
@@ -246,8 +413,6 @@ Create a new booking.
 
 **Response:** `201 Created` with the booking object.
 
----
-
 #### `PATCH /api/bookings/:uid/reschedule`
 
 Reschedule an existing booking.
@@ -262,8 +427,6 @@ Reschedule an existing booking.
 }
 ```
 
----
-
 #### `DELETE /api/bookings/:uid`
 
 Cancel a booking.
@@ -275,8 +438,6 @@ Cancel a booking.
   "reason": "Schedule conflict"
 }
 ```
-
----
 
 ### Email
 
@@ -298,8 +459,6 @@ Send a templated email.
 - `ghid-saturn` — Saturn in Aries guide
 - `soarele-stralucirea-ta` — Sun sign gift
 
----
-
 #### `POST /api/send-email-with-attachments`
 
 Send an email with PDF attachments downloaded from R2 storage. PDFs are downloaded to a temp directory, attached to the email, and automatically deleted after sending.
@@ -320,148 +479,18 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 - Full URL: `"https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs/chart-123.pdf"`
 - Just filename: `"chart-123.pdf"` → uses `R2_BASE_URL/pdfs/`
 
-**Response:**
+### Error Responses
 
-```json
-{
-  "success": true,
-  "data": {
-    "id": "abc123..."
-  }
-}
-```
+| Status Code | Meaning |
+| ----------- | ------- |
+| `400` | Invalid input (missing or malformed parameters) |
+| `404` | Route not found |
+| `413` | Request payload too large (>1MB) |
+| `429` | Rate limit exceeded |
+| `500` | Internal server error |
+| `502` | Bad gateway (Cal.com upstream error) |
 
----
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `NODE_ENV` | Yes | Environment: `development`, `staging`, `production` |
-| `ASTROLOGY_API_SERVER_PORT` | Yes | Astrology API server port |
-| `ASTROLOGY_API_SERVER_DNS` | Yes | Astrology API server DNS name |
-| `BOOKING_API_SERVER_PORT` | Yes | Booking API server port |
-| `BOOKING_API_SERVER_DNS` | Yes | Booking API server DNS name |
-| `PAYMENT_API_SERVER_PORT` | Yes | Payment API server port |
-| `PAYMENT_API_SERVER_DNS` | Yes | Payment API server DNS name |
-| `FRONTEND_SERVER_PORT` | Yes | Frontend dev server port |
-| `FRONTEND_SERVER_DNS` | Yes | Frontend server DNS name |
-| `BOOKING_API_SENTRY_DSN` | Yes | Sentry DSN for error tracking |
-| `CORS_ORIGINS` | No | Comma-separated allowed CORS origins (overrides defaults) |
-| `RESEND_API_KEY` | Yes | Resend API key for sending emails |
-| `CALCOM_API_KEY` | Yes | Cal.com API key with bookings/write permissions |
-| `CALCOM_BASE_URL` | Yes | Cal.com API base URL |
-| `R2_BASE_URL` | Yes | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
-| `D1_ACCOUNT_ID` | Yes | Cloudflare D1 account ID |
-| `D1_DATABASE_ID` | Yes | Cloudflare D1 database ID |
-| `D1_API_TOKEN` | Yes | Cloudflare D1 API token |
-
-### Default CORS Origins
-
-When `CORS_ORIGINS` is not set, the API allows requests from:
-
-| Service | Local | HTTP | HTTPS |
-|---------|-------|------|-------|
-| Frontend | `http://localhost:<FRONTEND_SERVER_PORT>` | `http://<FRONTEND_SERVER_DNS>:<FRONTEND_SERVER_PORT>` | `https://<FRONTEND_SERVER_DNS>:<FRONTEND_SERVER_PORT>` |
-| Astrology API | `http://localhost:<ASTROLOGY_API_SERVER_PORT>` | `http://<ASTROLOGY_API_SERVER_DNS>:<ASTROLOGY_API_SERVER_PORT>` | `https://<ASTROLOGY_API_SERVER_DNS>:<ASTROLOGY_API_SERVER_PORT>` |
-| Booking API | `http://localhost:<BOOKING_API_SERVER_PORT>` | `http://<BOOKING_API_SERVER_DNS>:<BOOKING_API_SERVER_PORT>` | `https://<BOOKING_API_SERVER_DNS>:<BOOKING_API_SERVER_PORT>` |
-| Payment API | `http://localhost:<PAYMENT_API_SERVER_PORT>` | `http://<PAYMENT_API_SERVER_DNS>:<PAYMENT_API_SERVER_PORT>` | `https://<PAYMENT_API_SERVER_DNS>:<PAYMENT_API_SERVER_PORT>` |
-
-Plus static origins:
-- `https://astrolumina.pages.dev`
-- `https://development.astrolumina.pages.dev`
-- `https://astrolumina.com`
-- `https://astrolumina.ro`
-
-Override with `CORS_ORIGINS` environment variable (comma-separated).
-
----
-
-## Cal.com API Versions
-
-The API uses different Cal.com API versions per resource:
-
-| Resource             | API Version  |
-| -------------------- | ------------ |
-| Event Types          | `2024-06-14` |
-| Availability / Slots | `2024-09-04` |
-| Bookings             | `2026-02-25` |
-
----
-
-## Project Structure
-
-```
-src/
-├── config/
-│   ├── env.ts                  # Zod-validated environment config
-│   └── session-slugs.ts        # Session key → Cal.com slug mapping
-├── middleware/
-│   ├── security.ts             # Helmet, CORS, rate limiter
-│   └── error-handler.ts        # Custom error types + global handler
-├── routes/
-│   ├── health.ts               # Health check endpoint
-│   ├── event-types.ts          # Event types + sessions listing
-│   ├── bookings.ts             # Booking CRUD + reschedule + cancel
-│   ├── availability.ts         # Available slots lookup
-│   ├── email.ts                # Email sending with R2 attachments
-│   └── events.ts               # Webhook handler for Cal.com events
-├── services/
-│   ├── calcom.ts               # Cal.com API client (axios)
-│   └── d1.ts                   # Cloudflare D1 client
-├── db/
-│   └── migrate.ts              # D1 database migrations
-├── types/
-│   └── calcom.ts               # Cal.com TypeScript interfaces
-├── instrument.ts               # Sentry initialization
-└── server.ts                   # Express app + graceful shutdown
-```
-
----
-
-## Tech Stack
-
-| Layer       | Technology                                  |
-| ----------- | ------------------------------------------- |
-| Runtime     | Node.js 22.x                                |
-| Language    | TypeScript 5.8 (strict mode)                |
-| Framework   | Express 5.x (ES Modules)                    |
-| HTTP Client | Axios                                       |
-| Validation  | Zod                                         |
-| Monitoring  | Sentry + Profiling                          |
-| Security    | Helmet, CORS, Rate Limiting (30 req/min/IP) |
-| Scheduling  | Cal.com API v2                              |
-| Email       | Resend                                      |
-| Storage     | Cloudflare R2 (PDF attachments)             |
-
----
-
-## Security Features
-
-- **Helmet** — Secure HTTP headers (X-Content-Type-Options, X-Frame-Options, etc.)
-- **Rate limiting** — 30 requests/minute/IP (configurable)
-- **CORS** — Configurable origin whitelist via `CORS_ORIGINS` env var
-- **Request body limit** — 1MB max (413 Payload Too Large on exceed)
-- **Zod validation** — Input validation at every endpoint
-- **Environment validation** — App fails fast with clear errors if config invalid
-- **Sentry PII scrubbing** — API keys redacted from error reports
-
----
-
-## Development
-
-```bash
-# Type checking
-npm run typecheck
-
-# Build for production
-npm run build
-
-# Clean reinstall
-npm run clean && npm install
-```
+In non-production modes (`development`, `staging`), error responses include the stack trace for debugging.
 
 ---
 
