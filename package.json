@@ -15,9 +15,7 @@
     "clean": "rm -rf node_modules && rm -rf dist",
     "d1:migrate": "tsx src/db/migrate.ts",
     "render-build": "npm run clean && npm install --include=dev && npm run build",
-    "update": "npm update --ignore-scripts",
-    "install": "npm install --include=dev",
-    "c_u_i_b_d": "npm run clean && npm run update && npm run install && npm run build && npm run dev"
+    "c_u_i_b_d": "npm run clean && npm update --ignore-scripts && npm install --include=dev && npm run build && npm run dev"
   },
   "dependencies": {
     "@sentry/node": "^10.45.0",
