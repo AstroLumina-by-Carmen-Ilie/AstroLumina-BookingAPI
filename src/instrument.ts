@@ -29,8 +29,9 @@ if (env.BOOKING_API_SENTRY_DSN) {
       "localhost",
       /^https:\/\/api\.cal\.com/,
       /^https:\/\/astrolumina\.pages\.dev/,
-      /^https:\/\/.*\.carmenilie\.com/,
+      /^https:\/\/develop\.astrolumina\.pages\.dev/,
       /^https:\/\/.*\.astrolumina\.com/,
+      /^https:\/\/.*\.astrolumina\.ro/,
     ],
 
     integrations: [
@@ -41,9 +42,8 @@ if (env.BOOKING_API_SENTRY_DSN) {
     ],
     profileSessionSampleRate: isProduction ? 0.1 : 1.0,
     profileLifecycle: "trace",
-
+    autoSessionTracking: true,
     sendDefaultPii: true,
-
     beforeSend: (event) => {
       if (event.exception?.values) {
         for (const exception of event.exception.values) {
