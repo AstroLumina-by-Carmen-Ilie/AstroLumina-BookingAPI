@@ -1,10 +1,18 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
-import axios from 'axios';
-import { z } from 'zod';
-import { calcomService } from '../services/calcom.js';
-import { Sentry } from '../instrument.js';
-import { createError } from '../middleware/error-handler.js';
-import { SESSION_SLUGS, resolveEventTypeForSession } from '../config/session-slugs.js';
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
+import axios from "axios";
+import { z } from "zod";
+import { calcomService } from "../services/calcom.js";
+import { Sentry } from "../instrument.js";
+import { createError } from "../middleware/error-handler.js";
+import {
+  SESSION_SLUGS,
+  resolveEventTypeForSession,
+} from "../config/session-slugs.js";
 
 const router = Router();
 
@@ -20,7 +28,7 @@ function pruneEmptyMetadata(
   if (!metadata) return undefined;
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(metadata)) {
-    if (v != null && String(v).trim() !== '') {
+    if (v != null && String(v).trim() !== "") {
       out[k] = String(v);
     }
   }
@@ -34,11 +42,11 @@ const createBookingSchema = z
     /** Opțional dacă trimiți sessionKey — același mecanism ca la /api/availability/slots/session/:key */
     sessionKey: z.string().min(1).optional(),
     eventTypeId: z.number().int().positive().optional(),
-    start: z.string().min(1, 'Start time is required (ISO 8601)'),
+    start: z.string().min(1, "Start time is required (ISO 8601)"),
     attendee: z.object({
-      name: z.string().min(1, 'Attendee name is required'),
-      email: z.string().email('Valid attendee email is required'),
-      timeZone: z.string().min(1, 'Time zone is required'),
+      name: z.string().min(1, "Attendee name is required"),
+      email: z.string().email("Valid attendee email is required"),
+      timeZone: z.string().min(1, "Time zone is required"),
       phoneNumber: z.string().optional(),
       language: z.string().optional(),
     }),
@@ -51,19 +59,19 @@ const createBookingSchema = z
       data.eventTypeId != null ||
       (data.sessionKey != null && data.sessionKey.length > 0),
     {
-      message: 'Either eventTypeId or sessionKey is required',
-      path: ['sessionKey'],
+      message: "Either eventTypeId or sessionKey is required",
+      path: ["sessionKey"],
     },
   );
 
 const rescheduleBookingSchema = z.object({
-  start: z.string().min(1, 'New start time is required (ISO 8601 UTC)'),
+  start: z.string().min(1, "New start time is required (ISO 8601 UTC)"),
   rescheduledBy: z.string().email().optional(),
   reschedulingReason: z.string().optional(),
 });
 
 const bookingUidSchema = z.object({
-  uid: z.string().min(1, 'Booking UID is required'),
+  uid: z.string().min(1, "Booking UID is required"),
 });
 
 // ─── Routes ─────────────────────────────────────────────────
@@ -74,28 +82,32 @@ const bookingUidSchema = z.object({
  * List bookings. Supports filtering by status, attendee email, and date range.
  */
 router.get(
-  '/api/bookings',
+  "/api/bookings",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const params: Record<string, string> = {};
 
-      if (req.query['status']) params['status'] = String(req.query['status']);
-      if (req.query['attendeeEmail']) params['attendeeEmail'] = String(req.query['attendeeEmail']);
-      if (req.query['afterStart']) params['afterStart'] = String(req.query['afterStart']);
-      if (req.query['beforeEnd']) params['beforeEnd'] = String(req.query['beforeEnd']);
-      if (req.query['take']) params['take'] = String(req.query['take']);
-      if (req.query['skip']) params['skip'] = String(req.query['skip']);
-      if (req.query['eventTypeId']) params['eventTypeId'] = String(req.query['eventTypeId']);
+      if (req.query["status"]) params["status"] = String(req.query["status"]);
+      if (req.query["attendeeEmail"])
+        params["attendeeEmail"] = String(req.query["attendeeEmail"]);
+      if (req.query["afterStart"])
+        params["afterStart"] = String(req.query["afterStart"]);
+      if (req.query["beforeEnd"])
+        params["beforeEnd"] = String(req.query["beforeEnd"]);
+      if (req.query["take"]) params["take"] = String(req.query["take"]);
+      if (req.query["skip"]) params["skip"] = String(req.query["skip"]);
+      if (req.query["eventTypeId"])
+        params["eventTypeId"] = String(req.query["eventTypeId"]);
 
       const bookings = await Sentry.startSpan(
-        { op: 'calcom.bookings', name: 'list-bookings' },
+        { op: "calcom.bookings", name: "list-bookings" },
         async () => calcomService.getBookings(params),
       );
 
       res.json({ bookings });
     } catch (error) {
-      console.error('Error fetching bookings:', error);
-      Sentry.captureException(error, { tags: { endpoint: 'list-bookings' } });
+      console.error("Error fetching bookings:", error);
+      Sentry.captureException(error, { tags: { endpoint: "list-bookings" } });
       next(error);
     }
   },
@@ -107,23 +119,23 @@ router.get(
  * Get a specific booking by UID.
  */
 router.get(
-  '/api/bookings/:uid',
+  "/api/bookings/:uid",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const parseResult = bookingUidSchema.safeParse(req.params);
       if (!parseResult.success) {
-        throw createError(400, 'Invalid booking UID');
+        throw createError(400, "Invalid booking UID");
       }
 
       const booking = await Sentry.startSpan(
-        { op: 'calcom.bookings', name: 'get-booking' },
+        { op: "calcom.bookings", name: "get-booking" },
         async () => calcomService.getBooking(parseResult.data.uid),
       );
 
       res.json({ booking });
     } catch (error) {
-      console.error('Error fetching booking:', error);
-      Sentry.captureException(error, { tags: { endpoint: 'get-booking' } });
+      console.error("Error fetching booking:", error);
+      Sentry.captureException(error, { tags: { endpoint: "get-booking" } });
       next(error);
     }
   },
@@ -156,13 +168,13 @@ router.get(
  * Poți trimite în loc de sessionKey un "eventTypeId" numeric dacă îl cunoști.
  */
 router.post(
-  '/api/bookings',
+  "/api/bookings",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const parseResult = createBookingSchema.safeParse(req.body);
       if (!parseResult.success) {
         const errors = parseResult.error.issues.map((i) => i.message);
-        throw createError(400, `Invalid booking data: ${errors.join(', ')}`);
+        throw createError(400, `Invalid booking data: ${errors.join(", ")}`);
       }
 
       const {
@@ -181,15 +193,15 @@ router.post(
         if (!SESSION_SLUGS[sessionKey]) {
           throw createError(
             400,
-            `Unknown session key "${sessionKey}". Valid keys: ${Object.keys(SESSION_SLUGS).join(', ')}`,
+            `Unknown session key "${sessionKey}". Valid keys: ${Object.keys(SESSION_SLUGS).join(", ")}`,
           );
         }
         const eventTypes = await Sentry.startSpan(
-          { op: 'calcom.event-types', name: 'resolve-booking-session' },
+          { op: "calcom.event-types", name: "resolve-booking-session" },
           async () => calcomService.getEventTypes(),
         );
         const eventType = resolveEventTypeForSession(sessionKey, eventTypes);
-        
+
         if (!eventType) {
           throw createError(
             404,
@@ -200,14 +212,14 @@ router.post(
       } else if (bodyEventTypeId != null) {
         eventTypeId = bodyEventTypeId;
       } else {
-        throw createError(400, 'Either eventTypeId or sessionKey is required');
+        throw createError(400, "Either eventTypeId or sessionKey is required");
       }
 
       const startUtc = normalizeStartUtcIso(start);
       const metadataClean = pruneEmptyMetadata(metadata);
 
       const booking = await Sentry.startSpan(
-        { op: 'calcom.bookings', name: 'create-booking' },
+        { op: "calcom.bookings", name: "create-booking" },
         async () =>
           calcomService.createBooking({
             eventTypeId,
@@ -221,11 +233,14 @@ router.post(
 
       res.status(201).json({ booking });
     } catch (error) {
-      console.error('Error creating booking:', error);
+      console.error("Error creating booking:", error);
       if (axios.isAxiosError(error) && error.response?.data) {
-        console.error('Cal.com error response:', JSON.stringify((error.response as any).data, null, 2));
+        console.error(
+          "Cal.com error response:",
+          JSON.stringify((error.response as any).data, null, 2),
+        );
       }
-      Sentry.captureException(error, { tags: { endpoint: 'create-booking' } });
+      Sentry.captureException(error, { tags: { endpoint: "create-booking" } });
       next(error);
     }
   },
@@ -244,30 +259,32 @@ router.post(
  * }
  */
 router.patch(
-  '/api/bookings/:uid/reschedule',
+  "/api/bookings/:uid/reschedule",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const uidResult = bookingUidSchema.safeParse(req.params);
       if (!uidResult.success) {
-        throw createError(400, 'Invalid booking UID');
+        throw createError(400, "Invalid booking UID");
       }
 
       const bodyResult = rescheduleBookingSchema.safeParse(req.body);
       if (!bodyResult.success) {
         const errors = bodyResult.error.issues.map((i) => i.message);
-        throw createError(400, `Invalid reschedule data: ${errors.join(', ')}`);
+        throw createError(400, `Invalid reschedule data: ${errors.join(", ")}`);
       }
 
       const booking = await Sentry.startSpan(
-        { op: 'calcom.bookings', name: 'reschedule-booking' },
+        { op: "calcom.bookings", name: "reschedule-booking" },
         async () =>
           calcomService.rescheduleBooking(uidResult.data.uid, bodyResult.data),
       );
 
       res.json({ booking });
     } catch (error) {
-      console.error('Error rescheduling booking:', error);
-      Sentry.captureException(error, { tags: { endpoint: 'reschedule-booking' } });
+      console.error("Error rescheduling booking:", error);
+      Sentry.captureException(error, {
+        tags: { endpoint: "reschedule-booking" },
+      });
       next(error);
     }
   },
@@ -284,25 +301,25 @@ router.patch(
  * }
  */
 router.delete(
-  '/api/bookings/:uid',
+  "/api/bookings/:uid",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const uidResult = bookingUidSchema.safeParse(req.params);
       if (!uidResult.success) {
-        throw createError(400, 'Invalid booking UID');
+        throw createError(400, "Invalid booking UID");
       }
 
       const reason = (req.body as { reason?: string } | undefined)?.reason;
 
       await Sentry.startSpan(
-        { op: 'calcom.bookings', name: 'cancel-booking' },
+        { op: "calcom.bookings", name: "cancel-booking" },
         async () => calcomService.cancelBooking(uidResult.data.uid, reason),
       );
 
-      res.json({ message: 'Booking cancelled successfully' });
+      res.json({ message: "Booking cancelled successfully" });
     } catch (error) {
-      console.error('Error cancelling booking:', error);
-      Sentry.captureException(error, { tags: { endpoint: 'cancel-booking' } });
+      console.error("Error cancelling booking:", error);
+      Sentry.captureException(error, { tags: { endpoint: "cancel-booking" } });
       next(error);
     }
   },

@@ -1,37 +1,42 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
-import { z } from 'zod';
-import { Resend } from 'resend';
-import axios from 'axios';
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
-import { env } from '../config/env.js';
-import { Sentry } from '../instrument.js';
-import { createError } from '../middleware/error-handler.js';
+import {
+  Router,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express";
+import { z } from "zod";
+import { Resend } from "resend";
+import axios from "axios";
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
+import { env } from "../config/env.js";
+import { Sentry } from "../instrument.js";
+import { createError } from "../middleware/error-handler.js";
 
 const router = Router();
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
-const FROM_EMAIL = 'AstroLumina <onboarding@resend.dev>';
+const FROM_EMAIL = "AstroLumina <onboarding@resend.dev>";
 
 const emailSchema = z.object({
-  to: z.string().email('Invalid email address'),
-  type: z.enum(['ghid-saturn', 'soarele-stralucirea-ta']),
+  to: z.string().email("Invalid email address"),
+  type: z.enum(["ghid-saturn", "soarele-stralucirea-ta"]),
 });
 
 const emailWithAttachmentsSchema = z.object({
-  to: z.string().email('Invalid email address'),
-  subject: z.string().min(1, 'Subject is required'),
-  html: z.string().min(1, 'HTML content is required'),
-  attachments: z.array(z.string().url()).min(1, 'At least one attachment URL is required'),
+  to: z.string().email("Invalid email address"),
+  subject: z.string().min(1, "Subject is required"),
+  html: z.string().min(1, "HTML content is required"),
+  attachments: z
+    .array(z.string().url())
+    .min(1, "At least one attachment URL is required"),
 });
 
-const defaultR2BaseUrl = 'https://pub-3a468a81beab43daa28dba00d60409d6.r2.dev/pdfs';
-
 const emailTemplates = {
-  'ghid-saturn': {
-    subject: 'Ghidul lui Saturn în Berbec | Download',
+  "ghid-saturn": {
+    subject: "Ghidul lui Saturn în Berbec | Download",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #0a0a1a; color: #f3e8ff;">
         <h1 style="color: #a855f7;">Bine ai venit!</h1>
@@ -41,8 +46,8 @@ const emailTemplates = {
       </div>
     `,
   },
-  'soarele-stralucirea-ta': {
-    subject: 'Soarele, Strălucirea Ta | Cadoul tău',
+  "soarele-stralucirea-ta": {
+    subject: "Soarele, Strălucirea Ta | Cadoul tău",
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #0a0a1a; color: #f3e8ff;">
         <h1 style="color: #fbbf24;">Soarele, Strălucirea Ta</h1>
@@ -62,8 +67,8 @@ async function downloadR2ToLocal(fileUrl: string): Promise<string> {
 
   const response = await axios({
     url: fileUrl,
-    method: 'GET',
-    responseType: 'arraybuffer',
+    method: "GET",
+    responseType: "arraybuffer",
   });
 
   await fs.writeFile(localPath, Buffer.from(response.data));
@@ -79,23 +84,23 @@ async function cleanupTempFile(filePath: string): Promise<void> {
 }
 
 router.post(
-  '/send-email',
+  "/send-email",
   async (req: Request, res: Response, next: NextFunction) => {
     const SentryInstance = Sentry;
 
     try {
       const parseResult = emailSchema.safeParse(req.body);
       if (!parseResult.success) {
-        throw createError(400, 'Invalid request body');
+        throw createError(400, "Invalid request body");
       }
 
       const { to, type } = parseResult.data;
 
       if (!resend) {
-        throw createError(500, 'Email service not configured');
+        throw createError(500, "Email service not configured");
       }
 
-      SentryInstance.setContext('email', { to, type });
+      SentryInstance.setContext("email", { to, type });
 
       const template = emailTemplates[type];
 
@@ -108,38 +113,44 @@ router.post(
 
       res.json({ success: true, data });
     } catch (error) {
-      console.error('Email send error:', error);
-      SentryInstance.captureException(error, { tags: { endpoint: 'send-email' } });
+      console.error("Email send error:", error);
+      SentryInstance.captureException(error, {
+        tags: { endpoint: "send-email" },
+      });
       next(error);
     }
-  });
+  },
+);
 
 router.post(
-  '/send-email-with-attachments',
+  "/send-email-with-attachments",
   async (req: Request, res: Response, next: NextFunction) => {
     const SentryInstance = Sentry;
 
     try {
       const parseResult = emailWithAttachmentsSchema.safeParse(req.body);
       if (!parseResult.success) {
-        throw createError(400, 'Invalid request body');
+        throw createError(400, "Invalid request body");
       }
 
       const { to, subject, html, attachments } = parseResult.data;
 
       if (!resend) {
-        throw createError(500, 'Email service not configured');
+        throw createError(500, "Email service not configured");
       }
 
-      SentryInstance.setContext('email-with-attachments', { to, attachmentCount: attachments.length });
+      SentryInstance.setContext("email-with-attachments", {
+        to,
+        attachmentCount: attachments.length,
+      });
 
       const attachmentFiles: string[] = [];
 
       try {
         for (const attachmentUrl of attachments) {
-          const fullUrl = attachmentUrl.startsWith('http')
+          const fullUrl = attachmentUrl.startsWith("http")
             ? attachmentUrl
-            : `${env.R2_BASE_URL || defaultR2BaseUrl}/${attachmentUrl}`;
+            : `${env.R2_BASE_URL}/pdfs/${attachmentUrl}`;
 
           const localPath = await downloadR2ToLocal(fullUrl);
           attachmentFiles.push(localPath);
@@ -153,8 +164,8 @@ router.post(
           attachments: await Promise.all(
             attachmentFiles.map(async (filePath) => ({
               filename: path.basename(filePath),
-              content: (await fs.readFile(filePath)).toString('base64'),
-            }))
+              content: (await fs.readFile(filePath)).toString("base64"),
+            })),
           ),
         });
 
@@ -165,8 +176,10 @@ router.post(
         }
       }
     } catch (error) {
-      console.error('Email with attachments error:', error);
-      SentryInstance.captureException(error, { tags: { endpoint: 'send-email-with-attachments' } });
+      console.error("Email with attachments error:", error);
+      SentryInstance.captureException(error, {
+        tags: { endpoint: "send-email-with-attachments" },
+      });
       next(error);
     }
   },
