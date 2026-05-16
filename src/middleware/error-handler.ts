@@ -1,18 +1,18 @@
-import type { Request, Response, NextFunction } from 'express';
-import axios from 'axios';
-import { env } from '../config/env.js';
+import type { Request, Response, NextFunction } from "express";
+import axios from "axios";
+import { env } from "../config/env.js";
 
 function calComErrorMessage(data: unknown): string | undefined {
-  if (!data || typeof data !== 'object') return undefined;
+  if (!data || typeof data !== "object") return undefined;
   const o = data as Record<string, unknown>;
-  const err = o['error'];
-  if (typeof err === 'string') return err;
-  if (err && typeof err === 'object') {
+  const err = o["error"];
+  if (typeof err === "string") return err;
+  if (err && typeof err === "object") {
     const e = err as Record<string, unknown>;
-    if (typeof e['message'] === 'string') return e['message'];
+    if (typeof e["message"] === "string") return e["message"];
     return JSON.stringify(err);
   }
-  if (typeof o['message'] === 'string') return o['message'];
+  if (typeof o["message"] === "string") return o["message"];
   return undefined;
 }
 
@@ -35,15 +35,20 @@ export function payloadTooLargeHandler(
   res: Response,
   next: NextFunction,
 ): void {
-  if (err.message?.includes('entity.too.large') || err.type === 'entity.too.large') {
-    res.status(413).json({ error: 'Request payload too large. Maximum size is 1MB.' });
+  if (
+    err.message?.includes("entity.too.large") ||
+    err.type === "entity.too.large"
+  ) {
+    res
+      .status(413)
+      .json({ error: "Request payload too large. Maximum size is 1MB." });
     return;
   }
   next(err);
 }
 
 export function notFoundHandler(_req: Request, res: Response): void {
-  res.status(404).json({ error: 'Route not found' });
+  res.status(404).json({ error: "Route not found" });
 }
 
 export function globalErrorHandler(
@@ -52,9 +57,9 @@ export function globalErrorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  console.error('Unhandled error:', err);
+  console.error("Unhandled error:", err);
 
-  const isProduction = env.NODE_ENV === 'production';
+  const isProduction = env.NODE_ENV === "production";
 
   if (axios.isAxiosError(err)) {
     const upstream = err.response?.status;
@@ -62,13 +67,13 @@ export function globalErrorHandler(
     const calMsg = calComErrorMessage(body);
     if (upstream && upstream >= 400 && upstream < 500) {
       res.status(upstream).json({
-        error: calMsg ?? err.message ?? 'Upstream request failed',
+        error: calMsg ?? err.message ?? "Upstream request failed",
         ...(!isProduction && body !== undefined ? { details: body } : {}),
       });
       return;
     }
     res.status(502).json({
-      error: isProduction ? 'Bad gateway' : calMsg ?? err.message,
+      error: isProduction ? "Bad gateway" : (calMsg ?? err.message),
       ...(!isProduction && body !== undefined ? { details: body } : {}),
     });
     return;
@@ -78,7 +83,7 @@ export function globalErrorHandler(
   const statusCode = appErr.statusCode ?? 500;
 
   const response: Record<string, unknown> = {
-    error: isProduction ? 'Internal server error' : appErr.message ?? 'Error',
+    error: isProduction ? "Internal server error" : (appErr.message ?? "Error"),
   };
 
   if (!isProduction && appErr instanceof Error) {

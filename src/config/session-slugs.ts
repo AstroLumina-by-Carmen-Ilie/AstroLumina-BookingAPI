@@ -1,4 +1,4 @@
-import type { CalComEventType } from '../types/calcom.js';
+import type { CalComEventType } from "../types/calcom.js";
 
 /**
  * Chei folosite de frontend în URL-uri / session; mapare la slug-ul event type-ului din Cal.com.
@@ -6,9 +6,9 @@ import type { CalComEventType } from '../types/calcom.js';
  * aliases încearcă și varianta din seed.
  */
 export const SESSION_SLUGS: Record<string, string> = {
-  'astrograma-natala-si-karmica': 'astrograma-natala-si-karmica',
-  'astrograma-relationala': 'astrograma-relationala',
-  'astrograma-previzionala': 'astrograma-previzionala',
+  "astrograma-natala-si-karmica": "astrograma-natala-si-karmica",
+  "astrograma-relationala": "astrograma-relationala",
+  "astrograma-previzionala": "astrograma-previzionala",
 };
 
 /** Slug-uri alternative (legacy / rename) pentru aceeași cheie de sesiune. */

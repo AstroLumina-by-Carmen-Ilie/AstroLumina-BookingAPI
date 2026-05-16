@@ -1,17 +1,40 @@
 services:
-  booking:
+  booking-api:
     build:
       context: .
       dockerfile: Dockerfile
     image: ghcr.io/astrolumina-by-carmen-ilie/astrolumina-bookingapi:latest
     pull_policy: always
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - ASTROLOGY_API_SERVER_PORT=${ASTROLOGY_API_SERVER_PORT}
+      - ASTROLOGY_API_SERVER_DNS=${ASTROLOGY_API_SERVER_DNS}
+      - BOOKING_API_SERVER_PORT=${BOOKING_API_SERVER_PORT}
+      - BOOKING_API_SERVER_DNS=${BOOKING_API_SERVER_DNS}
+      - PAYMENT_API_SERVER_PORT=${PAYMENT_API_SERVER_PORT}
+      - PAYMENT_API_SERVER_DNS=${PAYMENT_API_SERVER_DNS}
+      - FRONTEND_SERVER_PORT=${FRONTEND_SERVER_PORT}
+      - FRONTEND_SERVER_DNS=${FRONTEND_SERVER_DNS}
+      - BOOKING_API_SENTRY_DSN=${BOOKING_API_SENTRY_DSN}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CALCOM_API_KEY=${CALCOM_API_KEY}
+      - CALCOM_BASE_URL=${CALCOM_BASE_URL}
+      - R2_BASE_URL=${R2_BASE_URL}
+      - D1_ACCOUNT_ID=${D1_ACCOUNT_ID}
+      - D1_DATABASE_ID=${D1_DATABASE_ID}
+      - D1_API_TOKEN=${D1_API_TOKEN}
     ports:
-      - "3033:3033"
+      - "${BOOKING_API_SERVER_PORT}:${BOOKING_API_SERVER_PORT}"
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:3033/health" ]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://localhost:${BOOKING_API_SERVER_PORT}/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,10 +43,10 @@ services:
       replicas: 1
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 1G
         reservations:
-          cpus: '0.125'
+          cpus: "0.125"
           memory: 128M
     networks:
       - booking-api

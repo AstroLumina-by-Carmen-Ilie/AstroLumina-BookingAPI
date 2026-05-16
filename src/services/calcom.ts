@@ -1,5 +1,5 @@
-import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
-import { env } from '../config/env.js';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from "axios";
+import { env } from "../config/env.js";
 import type {
   CalComEventType,
   CalComBooking,
@@ -7,22 +7,22 @@ import type {
   CalComSlot,
   CreateBookingPayload,
   RescheduleBookingPayload,
-} from '../types/calcom.js';
+} from "../types/calcom.js";
 
 /** Cal.com documents a different `cal-api-version` per resource; see https://cal.com/docs/api-reference/v2 */
-const CAL_EVENT_TYPES_VERSION = '2024-06-14';
-const CAL_SLOTS_VERSION = '2024-09-04';
-const CAL_BOOKINGS_VERSION = '2026-02-25';
+const CAL_EVENT_TYPES_VERSION = "2024-06-14";
+const CAL_SLOTS_VERSION = "2024-09-04";
+const CAL_BOOKINGS_VERSION = "2026-02-25";
 
 function unwrapData<T>(body: unknown): T | undefined {
-  if (body && typeof body === 'object' && 'data' in body) {
+  if (body && typeof body === "object" && "data" in body) {
     return (body as { data: T }).data;
   }
   return undefined;
 }
 
 function normalizeSlotEntry(item: unknown): CalComSlot {
-  if (item && typeof item === 'object' && 'start' in item) {
+  if (item && typeof item === "object" && "start" in item) {
     const o = item as { start: string; end?: string };
     return { start: o.start, end: o.end ?? o.start };
   }
@@ -31,8 +31,10 @@ function normalizeSlotEntry(item: unknown): CalComSlot {
 }
 
 function normalizeSlotsBody(body: unknown): Record<string, CalComSlot[]> {
-  const map = unwrapData<Record<string, unknown>>(body) ?? (body as Record<string, unknown>);
-  if (!map || typeof map !== 'object') {
+  const map =
+    unwrapData<Record<string, unknown>>(body) ??
+    (body as Record<string, unknown>);
+  if (!map || typeof map !== "object") {
     return {};
   }
   const out: Record<string, CalComSlot[]> = {};
@@ -47,8 +49,8 @@ function normalizeBookingV2(raw: unknown): CalComBooking {
   const b = raw as CalComBooking & { start?: string; end?: string };
   return {
     ...b,
-    startTime: b.startTime ?? b.start ?? '',
-    endTime: b.endTime ?? b.end ?? '',
+    startTime: b.startTime ?? b.start ?? "",
+    endTime: b.endTime ?? b.end ?? "",
   };
 }
 
@@ -59,7 +61,7 @@ class CalComService {
     this.client = axios.create({
       baseURL: env.CALCOM_BASE_URL,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: `Bearer ${env.CALCOM_API_KEY}`,
       },
     });
@@ -70,7 +72,7 @@ class CalComService {
       ...extra,
       headers: {
         ...extra?.headers,
-        'cal-api-version': CAL_EVENT_TYPES_VERSION,
+        "cal-api-version": CAL_EVENT_TYPES_VERSION,
       },
     };
   }
@@ -80,7 +82,7 @@ class CalComService {
       ...extra,
       headers: {
         ...extra?.headers,
-        'cal-api-version': CAL_BOOKINGS_VERSION,
+        "cal-api-version": CAL_BOOKINGS_VERSION,
       },
     };
   }
@@ -88,31 +90,60 @@ class CalComService {
   // ─── Event Types ──────────────────────────────────────────
 
   async getEventTypes(): Promise<CalComEventType[]> {
-    const { data } = await this.client.get('/v2/event-types', this.eventTypesConfig());
+    const { data } = await this.client.get(
+      "/v2/event-types",
+      this.eventTypesConfig(),
+    );
     const list = unwrapData<CalComEventType[]>(data);
-    return list ?? (data as { event_types?: CalComEventType[] }).event_types ?? [];
+    return (
+      list ?? (data as { event_types?: CalComEventType[] }).event_types ?? []
+    );
   }
 
   async getEventTypeById(id: number): Promise<CalComEventType> {
-    const { data } = await this.client.get(`/v2/event-types/${id}`, this.eventTypesConfig());
+    const { data } = await this.client.get(
+      `/v2/event-types/${id}`,
+      this.eventTypesConfig(),
+    );
     const inner = unwrapData<CalComEventType>(data);
-    return inner ?? (data as { event_type?: CalComEventType }).event_type ?? (data as CalComEventType);
+    return (
+      inner ??
+      (data as { event_type?: CalComEventType }).event_type ??
+      (data as CalComEventType)
+    );
   }
 
-  async createEventType(payload: Record<string, unknown>): Promise<CalComEventType> {
-    const { data } = await this.client.post('/v2/event-types', payload, this.eventTypesConfig());
+  async createEventType(
+    payload: Record<string, unknown>,
+  ): Promise<CalComEventType> {
+    const { data } = await this.client.post(
+      "/v2/event-types",
+      payload,
+      this.eventTypesConfig(),
+    );
     const inner = unwrapData<CalComEventType>(data);
-    return inner ?? (data as { event_type?: CalComEventType }).event_type ?? (data as CalComEventType);
+    return (
+      inner ??
+      (data as { event_type?: CalComEventType }).event_type ??
+      (data as CalComEventType)
+    );
   }
 
-  async updateEventType(id: number, payload: Record<string, unknown>): Promise<CalComEventType> {
+  async updateEventType(
+    id: number,
+    payload: Record<string, unknown>,
+  ): Promise<CalComEventType> {
     const { data } = await this.client.patch(
       `/v2/event-types/${id}`,
       payload,
       this.eventTypesConfig(),
     );
     const inner = unwrapData<CalComEventType>(data);
-    return inner ?? (data as { event_type?: CalComEventType }).event_type ?? (data as CalComEventType);
+    return (
+      inner ??
+      (data as { event_type?: CalComEventType }).event_type ??
+      (data as CalComEventType)
+    );
   }
 
   async deleteEventType(id: number): Promise<void> {
@@ -122,7 +153,10 @@ class CalComService {
   // ─── Bookings ────────────────────────────────────────────
 
   async getBookings(params?: Record<string, string>): Promise<CalComBooking[]> {
-    const { data } = await this.client.get('/v2/bookings', this.bookingsConfig({ params }));
+    const { data } = await this.client.get(
+      "/v2/bookings",
+      this.bookingsConfig({ params }),
+    );
     const inner = unwrapData<unknown[]>(data);
     const list =
       inner ??
@@ -149,18 +183,25 @@ class CalComService {
     const bookingPayload = {
       ...payload,
       location: {
-        type: 'integration',
-        integration: 'zoom'
-      }
+        type: "integration",
+        integration: "zoom",
+      },
     };
-    
-    const { data } = await this.client.post('/v2/bookings', bookingPayload, this.bookingsConfig());
+
+    const { data } = await this.client.post(
+      "/v2/bookings",
+      bookingPayload,
+      this.bookingsConfig(),
+    );
     const inner = unwrapData<CalComBooking>(data);
     const raw = inner ?? (data as { booking?: CalComBooking }).booking ?? data;
     return normalizeBookingV2(raw);
   }
 
-  async rescheduleBooking(uid: string, payload: RescheduleBookingPayload): Promise<CalComBooking> {
+  async rescheduleBooking(
+    uid: string,
+    payload: RescheduleBookingPayload,
+  ): Promise<CalComBooking> {
     const { data } = await this.client.post(
       `/v2/bookings/${encodeURIComponent(uid)}/reschedule`,
       payload,
@@ -187,16 +228,16 @@ class CalComService {
     endTime: string,
     timeZone?: string,
   ): Promise<CalComSlotsResponse> {
-    const { data } = await this.client.get('/v2/slots', {
+    const { data } = await this.client.get("/v2/slots", {
       params: {
         eventTypeId,
         start: startTime,
         end: endTime,
-        timeZone: timeZone ?? 'Europe/Bucharest',
-        format: 'range',
+        timeZone: timeZone ?? "Europe/Bucharest",
+        format: "range",
       },
       headers: {
-        'cal-api-version': CAL_SLOTS_VERSION,
+        "cal-api-version": CAL_SLOTS_VERSION,
       },
     });
 

@@ -13,9 +13,9 @@
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf node_modules && rm -rf dist",
+    "d1:migrate": "tsx src/db/migrate.ts",
     "render-build": "npm run clean && npm install --include=dev && npm run build",
-    "update-n-build": "npm update --ignore-scripts && npm install --include=dev && npm run build",
-    "d1:migrate": "tsx src/db/migrate.ts"
+    "c_u_i_b_d": "npm run clean && npm update --ignore-scripts && npm install --include=dev && npm run build && npm run dev"
   },
   "dependencies": {
     "@sentry/node": "^10.45.0",

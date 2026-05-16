@@ -1,7 +1,7 @@
-import helmet from 'helmet';
-import cors from 'cors';
-import rateLimit from 'express-rate-limit';
-import { env } from '../config/env.js';
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
+import { env } from "../config/env.js";
 
 export const securityHeaders = helmet();
 
@@ -29,7 +29,7 @@ const defaultOrigins = [
 ];
 
 const corsOrigins = env.CORS_ORIGINS
-  ? env.CORS_ORIGINS.split(',').map((s) => s.trim())
+  ? env.CORS_ORIGINS.split(",").map((s) => s.trim())
   : defaultOrigins;
 
 export const corsMiddleware = cors({ origin: corsOrigins });
@@ -39,5 +39,7 @@ export const rateLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many requests from this IP, please try again after a minute' },
+  message: {
+    error: "Too many requests from this IP, please try again after a minute",
+  },
 });
