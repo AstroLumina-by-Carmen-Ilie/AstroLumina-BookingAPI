@@ -4,6 +4,15 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "staging", "production"]),
 
+  ASTROLOGY_API_SERVER_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "ASTROLOGY_API_SERVER_PORT is required"),
+  ASTROLOGY_API_SERVER_DNS: z
+    .string()
+    .min(1, "ASTROLOGY_API_SERVER_DNS is required"),
+
   BOOKING_API_SERVER_PORT: z.coerce
     .number()
     .int()
@@ -13,14 +22,21 @@ const envSchema = z.object({
     .string()
     .min(1, "BOOKING_API_SERVER_DNS is required"),
 
+  PAYMENT_API_SERVER_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "PAYMENT_API_SERVER_PORT is required"),
+  PAYMENT_API_SERVER_DNS: z
+    .string()
+    .min(1, "PAYMENT_API_SERVER_DNS is required"),
+
   FRONTEND_SERVER_PORT: z.coerce
     .number()
     .int()
     .positive()
     .min(1, "FRONTEND_SERVER_PORT is required"),
-  FRONTEND_SERVER_DNS: z
-    .string()
-    .min(1, "FRONTEND_SERVER_DNS is required"),
+  FRONTEND_SERVER_DNS: z.string().min(1, "FRONTEND_SERVER_DNS is required"),
 
   BOOKING_API_SENTRY_DSN: z
     .string()

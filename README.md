@@ -337,27 +337,39 @@ Send an email with PDF attachments downloaded from R2 storage. PDFs are download
 
 ### Environment Variables
 
-| Variable                  | Required | Description                                                       |
-| ------------------------- | -------- | ----------------------------------------------------------------- |
-| `NODE_ENV`                | Yes      | Environment: `development`, `staging`, `production`               |
-| `BOOKING_API_SERVER_PORT` | Yes      | Server listen port                                                |
-| `FRONTEND_SERVER_PORT`    | Yes      | Frontend dev server port (used for CORS)                          |
-| `CALCOM_API_KEY`          | Yes      | Cal.com API key with bookings/write permissions                   |
-| `CALCOM_BASE_URL`         | Yes      | Cal.com API base URL                                              |
-| `BOOKING_API_SENTRY_DSN`  | Yes      | Sentry DSN for error tracking                                     |
-| `CORS_ORIGINS`            | No       | Comma-separated allowed CORS origins (overrides defaults)         |
-| `RESEND_API_KEY`          | Yes      | Resend API key for sending emails                                 |
-| `R2_BASE_URL`             | Yes      | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
-| `D1_ACCOUNT_ID`           | Yes      | Cloudflare D1 account ID                                          |
-| `D1_DATABASE_ID`          | Yes      | Cloudflare D1 database ID                                         |
-| `D1_API_TOKEN`            | Yes      | Cloudflare D1 API token                                           |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NODE_ENV` | Yes | Environment: `development`, `staging`, `production` |
+| `ASTROLOGY_API_SERVER_PORT` | Yes | Astrology API server port |
+| `ASTROLOGY_API_SERVER_DNS` | Yes | Astrology API server DNS name |
+| `BOOKING_API_SERVER_PORT` | Yes | Booking API server port |
+| `BOOKING_API_SERVER_DNS` | Yes | Booking API server DNS name |
+| `PAYMENT_API_SERVER_PORT` | Yes | Payment API server port |
+| `PAYMENT_API_SERVER_DNS` | Yes | Payment API server DNS name |
+| `FRONTEND_SERVER_PORT` | Yes | Frontend dev server port |
+| `FRONTEND_SERVER_DNS` | Yes | Frontend server DNS name |
+| `BOOKING_API_SENTRY_DSN` | Yes | Sentry DSN for error tracking |
+| `CORS_ORIGINS` | No | Comma-separated allowed CORS origins (overrides defaults) |
+| `RESEND_API_KEY` | Yes | Resend API key for sending emails |
+| `CALCOM_API_KEY` | Yes | Cal.com API key with bookings/write permissions |
+| `CALCOM_BASE_URL` | Yes | Cal.com API base URL |
+| `R2_BASE_URL` | Yes | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
+| `D1_ACCOUNT_ID` | Yes | Cloudflare D1 account ID |
+| `D1_DATABASE_ID` | Yes | Cloudflare D1 database ID |
+| `D1_API_TOKEN` | Yes | Cloudflare D1 API token |
 
 ### Default CORS Origins
 
-When `CORS_ORIGINS` is not set, the API allows:
+When `CORS_ORIGINS` is not set, the API allows requests from:
 
-- `http://localhost:<FRONTEND_SERVER_PORT>`
-- `http://localhost:<BOOKING_API_SERVER_PORT>`
+| Service | Local | HTTP | HTTPS |
+|---------|-------|------|-------|
+| Frontend | `http://localhost:<FRONTEND_SERVER_PORT>` | `http://<FRONTEND_SERVER_DNS>:<FRONTEND_SERVER_PORT>` | `https://<FRONTEND_SERVER_DNS>:<FRONTEND_SERVER_PORT>` |
+| Astrology API | `http://localhost:<ASTROLOGY_API_SERVER_PORT>` | `http://<ASTROLOGY_API_SERVER_DNS>:<ASTROLOGY_API_SERVER_PORT>` | `https://<ASTROLOGY_API_SERVER_DNS>:<ASTROLOGY_API_SERVER_PORT>` |
+| Booking API | `http://localhost:<BOOKING_API_SERVER_PORT>` | `http://<BOOKING_API_SERVER_DNS>:<BOOKING_API_SERVER_PORT>` | `https://<BOOKING_API_SERVER_DNS>:<BOOKING_API_SERVER_PORT>` |
+| Payment API | `http://localhost:<PAYMENT_API_SERVER_PORT>` | `http://<PAYMENT_API_SERVER_DNS>:<PAYMENT_API_SERVER_PORT>` | `https://<PAYMENT_API_SERVER_DNS>:<PAYMENT_API_SERVER_PORT>` |
+
+Plus static origins:
 - `https://astrolumina.pages.dev`
 - `https://development.astrolumina.pages.dev`
 - `https://astrolumina.com`
