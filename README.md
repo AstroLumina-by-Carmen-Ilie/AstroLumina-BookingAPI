@@ -32,7 +32,215 @@ Each session collects:
 - Birth place (city, county, country)
 - Birth time (24h format or AM/PM)
 
-## Quick Start
+---
+
+## Security
+
+| Feature           | Implementation                                              |
+| ----------------- | ----------------------------------------------------------- |
+| **HTTP Headers**  | Helmet (CSP, HSTS, X-Frame-Options, etc.)                   |
+| **Rate Limiting** | 30 requests/minute per IP                                   |
+| **CORS**          | Dynamic whitelist built from `*_SERVER_PORT` / `*_SERVER_DNS` env vars (Astrology, Booking, Payment, Frontend services) + Cloudflare Pages domains (`astrolumina.pages.dev`, `develop.astrolumina.pages.dev`, `astrolumina.com`, `astrolumina.ro`). Override via `CORS_ORIGINS`. |
+| **Request Size**  | Max 1MB body (returns `413` if exceeded)                    |
+| **PII Scrubbing** | Sentry automatically redacts API keys from error reports    |
+| **Input Validation** | Zod schemas on all endpoint inputs                       |
+| **Environment Validation** | Zod-validated env.ts — app refuses to start with missing required vars |
+| **Secrets Management** | All secrets (Cal.com API key, Resend key, D1/R2 credentials) managed via Doppler |
+
+---
+
+## Tech Stack
+
+| Layer       | Technology                                  |
+| ----------- | ------------------------------------------- |
+| **Runtime**     | Node.js 22.x                                |
+| **Language**    | TypeScript 5.8 (strict mode, ESM)           |
+| **Framework**   | Express 5.x                                 |
+| **HTTP Client** | Axios                                       |
+| **Validation**  | Zod                                         |
+| **Monitoring**  | Sentry 10.x (with profiling)                |
+| **Security**    | Helmet, CORS, Rate Limiting (30 req/min/IP) |
+| **Scheduling**  | Cal.com API v2                              |
+| **Email**       | Resend                                      |
+| **Database**    | Cloudflare D1 (SQLite)                      |
+| **Storage**     | Cloudflare R2 (PDF attachments)             |
+| **Secrets**     | Doppler                                     |
+| **Container**   | Docker, Docker Compose                      |
+
+---
+
+## Project Structure
+
+```
+.
+├── .github/
+│   └── workflows/           # CI/CD pipelines
+│       └── build-deploy.yml  # Docker image build & push
+├── src/
+│   ├── server.ts            # Express entry point + graceful shutdown
+│   ├── instrument.ts        # Sentry initialization (imported first)
+│   ├── config/
+│   │   ├── env.ts           # Zod-based environment validation
+│   │   └── session-slugs.ts # Session key → Cal.com slug mapping
+│   ├── middleware/
+│   │   ├── security.ts      # Helmet, CORS, rate limiter
+│   │   └── error-handler.ts # Custom error types + global handler (Axios/Cal.com aware)
+│   ├── routes/
+│   │   ├── health.ts        # GET /health
+│   │   ├── event-types.ts   # Event types + sessions listing
+│   │   ├── bookings.ts      # Booking CRUD + reschedule + cancel
+│   │   ├── availability.ts  # Available slots lookup
+│   │   ├── email.ts         # Email sending with R2 attachments
+│   │   └── events.ts        # Webhook handler for Cal.com events
+│   ├── services/
+│   │   ├── calcom.ts        # Cal.com API client (axios)
+│   │   └── d1.ts            # Cloudflare D1 client
+│   ├── db/
+│   │   └── migrate.ts       # D1 database migrations
+│   └── types/
+│       └── calcom.ts        # Cal.com TypeScript interfaces
+├── dist/                    # Compiled output (gitignored)
+├── docker-compose.yml       # Single-service deployment
+├── Dockerfile               # Multi-stage build
+├── VERSION.json             # Version config
+├── .dockerignore
+├── .env.example             # Environment variables template (not committed)
+├── tsconfig.json
+└── package.json
+```
+
+---
+
+## Architecture
+
+The BookingAPI is a **single-service** deployment that orchestrates multiple external services:
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    Frontend (React)                              │
+└────────────────────────┬─────────────────────────────────────────┘
+                         │ GET/POST /api/*
+                         ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                 BookingAPI (1 replica)                           │
+│  ┌────────────┐  ┌────────────┐  ┌────────────────────────────┐ │
+│  │  Security  │→ │  Routes    │→ │  External Services         │ │
+│  │  (Helmet,  │  │  (Zod      │  │                            │ │
+│  │  CORS,     │  │  validate) │  │  ┌─────────────────────┐   │ │
+│  │  Rate Lim) │  └────────────┘  │  │ Cal.com API         │   │ │
+│  └────────────┘        │         │  │ (scheduling, Zoom)  │   │ │
+│                        ▼         │  └─────────────────────┘   │ │
+│                 Orchestrator     │  ┌─────────────────────┐   │ │
+│                 (bookings,       │  │ Resend              │   │ │
+│                  email, D1, R2)  │  │ (templated emails)  │   │ │
+│                        │         │  └─────────────────────┘   │ │
+│                        ▼         │  ┌─────────────────────┐   │ │
+│                 Data Layer       │  │ Cloudflare D1       │   │ │
+│                 (D1 SQLite,      │  │ (persistent data)   │   │ │
+│                  R2 PDFs)        │  └─────────────────────┘   │ │
+│                                  │  ┌─────────────────────┐   │ │
+│  • healthcheck: /health every 30s│  │ Cloudflare R2       │   │ │
+│  • resources: 0.125–1 CPU,      │  │ (PDF storage)       │   │ │
+│    128M–1G RAM                  │  └─────────────────────┘   │ │
+│  • Sentry error tracking        │                            │ │
+│    + profiling                  └────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Cal.com API Versions
+
+| Resource             | API Version  |
+| -------------------- | ------------ |
+| Event Types          | `2024-06-14` |
+| Availability / Slots | `2024-09-04` |
+| Bookings             | `2026-02-25` |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `NODE_ENV` | Yes | — | Environment: `development`, `staging`, `production` |
+| `ASTROLOGY_API_SERVER_PORT` | Yes | — | Astrology API server port |
+| `ASTROLOGY_API_SERVER_DNS` | Yes | — | Astrology API server DNS name |
+| `BOOKING_API_SERVER_PORT` | Yes | — | Booking API server port |
+| `BOOKING_API_SERVER_DNS` | Yes | — | Booking API server DNS name |
+| `PAYMENT_API_SERVER_PORT` | Yes | — | Payment API server port |
+| `PAYMENT_API_SERVER_DNS` | Yes | — | Payment API server DNS name |
+| `FRONTEND_SERVER_PORT` | Yes | — | Frontend dev server port |
+| `FRONTEND_SERVER_DNS` | Yes | — | Frontend server DNS name |
+| `BOOKING_API_SENTRY_DSN` | Yes | — | Sentry DSN for error tracking |
+| `CORS_ORIGINS` | No | _(dynamic defaults)_ | Comma-separated allowed CORS origins (overrides defaults) |
+| `RESEND_API_KEY` | Yes | — | Resend API key for sending emails |
+| `CALCOM_API_KEY` | Yes | — | Cal.com API key with bookings/write permissions |
+| `CALCOM_BASE_URL` | Yes | — | Cal.com API base URL |
+| `R2_BASE_URL` | Yes | — | Cloudflare R2 base URL (without `/pdfs` — appended automatically) |
+| `D1_ACCOUNT_ID` | Yes | — | Cloudflare D1 account ID |
+| `D1_DATABASE_ID` | Yes | — | Cloudflare D1 database ID |
+| `D1_API_TOKEN` | Yes | — | Cloudflare D1 API token |
+
+### Default CORS Origins
+
+When `CORS_ORIGINS` is not set, the API allows requests from all 4 services (Frontend, Astrology API, Booking API, Payment API) on localhost, HTTP, and HTTPS variants, plus:
+
+- `https://astrolumina.pages.dev`
+- `https://develop.astrolumina.pages.dev`
+- `https://astrolumina.com`
+- `https://astrolumina.ro`
+
+---
+
+## Deployment
+
+### Docker Compose
+
+```bash
+# Build and start the service
+docker compose up -d
+
+# View logs
+docker compose logs -f booking-api
+
+# Stop services
+docker compose down
+```
+
+### Manual Docker Build
+
+```bash
+# Build image
+docker build -t astrolumina-booking-api:latest .
+
+# Run container
+docker run -p <PORT>:<PORT> --env-file .env astrolumina-booking-api:latest
+```
+
+### Render
+
+```text
+Build Command:  npm run render-build
+Start Command:  npm start
+Node Version:    22.x
+```
+
+### Image Registry
+
+Images are automatically built and pushed to GitHub Container Registry:
+
+```
+ghcr.io/astrolumina-by-carmen-ilie/astrolumina-bookingapi:latest
+ghcr.io/astrolumina-by-carmen-ilie/astrolumina-bookingapi:v1.0.0
+```
+
+### CI/CD Pipeline
+
+Triggered on **PR merge to `main`**:
+
+1. **Auto-version** — Reads `VERSION.json` for major/minor, increments patch, creates and pushes a git tag
+2. **Docker build** — Builds image from the new tag and pushes to GitHub Container Registry
+
+### Local Development
 
 ```bash
 # Install dependencies
