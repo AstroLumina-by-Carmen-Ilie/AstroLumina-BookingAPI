@@ -3,6 +3,10 @@ import type { Request, Response } from "express";
 
 const router = Router();
 
+router.get("/", (_req: Request, res: Response) => {
+  res.type("text").send("API is up and running");
+});
+
 router.get("/health", (_req: Request, res: Response) => {
   const mem = process.memoryUsage();
 
