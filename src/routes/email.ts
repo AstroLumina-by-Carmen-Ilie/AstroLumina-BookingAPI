@@ -185,4 +185,75 @@ router.post(
   },
 );
 
+const CONTACT_RECIPIENT = "contact@astrolumina.ro";
+
+const contactSchema = z.object({
+  name: z.string().trim().min(2, "Name is required").max(100),
+  email: z.string().trim().email("Invalid email address").max(254),
+  subject: z.string().trim().min(3, "Subject is required").max(150),
+  message: z.string().trim().min(10, "Message is too short").max(5000),
+});
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+router.post(
+  "/send-contact-email",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const SentryInstance = Sentry;
+
+    try {
+      const parseResult = contactSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        throw createError(400, "Invalid request body");
+      }
+
+      const { name, email, subject, message } = parseResult.data;
+
+      if (!resend) {
+        throw createError(500, "Email service not configured");
+      }
+
+      SentryInstance.setContext("contact-email", { from: email, subject });
+
+      const safeName = escapeHtml(name);
+      const safeEmail = escapeHtml(email);
+      const safeSubject = escapeHtml(subject);
+      const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
+
+      const data = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: CONTACT_RECIPIENT,
+        replyTo: email,
+        subject: `[Contact] ${subject}`,
+        html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #0a0a1a; color: #f3e8ff;">
+        <h1 style="color: #a855f7;">Mesaj nou din formularul de contact</h1>
+        <p><strong>Nume:</strong> ${safeName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
+        <p><strong>Subiect:</strong> ${safeSubject}</p>
+        <hr style="border-color: #4c1d95;">
+        <p>${safeMessage}</p>
+      </div>
+    `,
+        text: `Mesaj nou din formularul de contact\nNume: ${name}\nEmail: ${email}\nSubiect: ${subject}\n\n${message}`,
+      });
+
+      res.json({ success: true, data });
+    } catch (error) {
+      console.error("Contact email error:", error);
+      SentryInstance.captureException(error, {
+        tags: { endpoint: "send-contact-email" },
+      });
+      next(error);
+    }
+  },
+);
+
 export default router;
