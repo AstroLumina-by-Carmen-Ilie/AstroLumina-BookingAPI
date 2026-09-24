@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@sentry/node": "^10.45.0",
-    "@sentry/profiling-node": "^8.55.0",
+    "@sentry/profiling-node": "^11.0.0",
     "axios": "^1.18.0",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
