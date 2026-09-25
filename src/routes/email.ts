@@ -19,6 +19,7 @@ const router = Router();
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
 const FROM_EMAIL = "AstroLumina <onboarding@resend.dev>";
+const ASTROLUMINA_EMAIL = "AstroLumina <contact@astrolumina.ro>";
 
 const emailSchema = z.object({
   to: z.string().email("Invalid email address"),
@@ -100,13 +101,13 @@ router.post(
         throw createError(500, "Email service not configured");
       }
 
-      SentryInstance.setContext("email", { to, type });
+      SentryInstance.setContext("email", { to: to, type: type });
 
       const template = emailTemplates[type];
 
       const data = await resend.emails.send({
         from: FROM_EMAIL,
-        to,
+        to: to,
         subject: template.subject,
         html: template.html,
       });
@@ -140,7 +141,7 @@ router.post(
       }
 
       SentryInstance.setContext("email-with-attachments", {
-        to,
+        to: to,
         attachmentCount: attachments.length,
       });
 
@@ -158,9 +159,9 @@ router.post(
 
         const data = await resend.emails.send({
           from: FROM_EMAIL,
-          to,
-          subject,
-          html,
+          to: to,
+          subject: subject,
+          html: html,
           attachments: await Promise.all(
             attachmentFiles.map(async (filePath) => ({
               filename: path.basename(filePath),
@@ -184,8 +185,6 @@ router.post(
     }
   },
 );
-
-const CONTACT_RECIPIENT = "contact@astrolumina.ro";
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, "Name is required").max(100),
@@ -220,7 +219,7 @@ router.post(
         throw createError(500, "Email service not configured");
       }
 
-      SentryInstance.setContext("contact-email", { from: email, subject });
+      SentryInstance.setContext("contact-email", { from: email, subject: subject });
 
       const safeName = escapeHtml(name);
       const safeEmail = escapeHtml(email);
@@ -228,9 +227,8 @@ router.post(
       const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
 
       const data = await resend.emails.send({
-        from: FROM_EMAIL,
-        to: CONTACT_RECIPIENT,
-        replyTo: email,
+        from: email,
+        to: ASTROLUMINA_EMAIL,
         subject: `[Contact] ${subject}`,
         html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #0a0a1a; color: #f3e8ff;">
