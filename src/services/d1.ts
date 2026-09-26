@@ -32,7 +32,7 @@ async function queryD1(sql: string, params: unknown[] = []) {
 
 export async function getAvailableSeats(eventId: string): Promise<number> {
   const result = await queryD1(
-    "SELECT COUNT(*) as booked FROM event_attendees WHERE event_id = ?",
+    "SELECT COALESCE(COUNT(*), 0) as booked FROM event_attendees WHERE event_id = ?",
     [eventId],
   );
 
@@ -43,7 +43,13 @@ export async function getAvailableSeats(eventId: string): Promise<number> {
     throw new Error("D1 query failed");
   }
 
-  const booked = (result.result?.[0]?.results?.[0]?.booked as number) ?? 0;
+  // COUNT(*) returns exactly one row (0 when the table is empty), but coerce
+  // defensively so `MAX_SEATS - booked` always operates on an integer.
+  const raw = result.result?.[0]?.results?.[0]?.booked;
+  const booked =
+    raw === null || raw === undefined || Number.isNaN(Number(raw))
+      ? 0
+      : Math.max(0, Math.trunc(Number(raw)));
   return MAX_SEATS - booked;
 }
 
@@ -101,7 +107,8 @@ export async function getAttendeeByPaymentIntent(
     throw new Error("D1 query failed");
   }
 
-  return result.result?.[0] as unknown as Attendee;
+  const rows = result.result?.[0]?.results as unknown as Attendee[] | undefined;
+  return rows?.[0] ?? null;
 }
 
 export { MAX_SEATS };
