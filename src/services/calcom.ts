@@ -179,7 +179,7 @@ class CalComService {
   }
 
   async createBooking(payload: CreateBookingPayload): Promise<CalComBooking> {
-    // Adaugam Zoom ca locatie implicita pentru toate sedintele
+    // Add Zoom as the default location for all sessions
     const bookingPayload = {
       ...payload,
       location: {

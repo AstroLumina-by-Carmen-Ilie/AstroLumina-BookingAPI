@@ -1,9 +1,9 @@
 import type { CalComEventType } from "../types/calcom.js";
 
 /**
- * Chei folosite de frontend în URL-uri / session; mapare la slug-ul event type-ului din Cal.com.
- * Dacă ai creat evenimentul cu `npm run seed`, natal-karmic poate fi `astrograma-natala-si-karmica` în Cal.com —
- * aliases încearcă și varianta din seed.
+ * Keys used by the frontend in URLs / session; mapping to the Cal.com event type slug.
+ * If you created the event with `npm run seed`, natal-karmic may be `astrograma-natala-si-karmica` in Cal.com —
+ * aliases also tries the seeded variant.
  */
 export const SESSION_SLUGS: Record<string, string> = {
   "astrograma-natala-si-karmica": "astrograma-natala-si-karmica",
@@ -11,7 +11,7 @@ export const SESSION_SLUGS: Record<string, string> = {
   "astrograma-previzionala": "astrograma-previzionala",
 };
 
-/** Slug-uri alternative (legacy / rename) pentru aceeași cheie de sesiune. */
+/** Alternative slugs (legacy / rename) for the same session key. */
 export const SESSION_SLUG_ALIASES: Record<string, string[]> = {
   // 'astrograma-natala-si-karmica': ['astrograma-natala-si-karmica'],
 };
