@@ -39,7 +39,7 @@ function pruneEmptyMetadata(
 
 const createBookingSchema = z
   .object({
-    /** Opțional dacă trimiți sessionKey — același mecanism ca la /api/availability/slots/session/:key */
+    /** Optional if you send sessionKey — same mechanism as /api/availability/slots/session/:key */
     sessionKey: z.string().min(1).optional(),
     eventTypeId: z.number().int().positive().optional(),
     start: z.string().min(1, "Start time is required (ISO 8601)"),
@@ -160,12 +160,12 @@ router.get(
  *   "bookingFieldsResponses": {
  *     "phone": "+40712345678",
  *     "birth-date": "15.03.1990",
- *     "birth-place": "București, România",
+ *     "birth-place": "Bucharest, Romania",
  *     "birth-time": "14:30"
  *   }
  * }
  *
- * Poți trimite în loc de sessionKey un "eventTypeId" numeric dacă îl cunoști.
+ * You can send a numeric "eventTypeId" instead of sessionKey if you know it.
  */
 router.post(
   "/api/bookings",
