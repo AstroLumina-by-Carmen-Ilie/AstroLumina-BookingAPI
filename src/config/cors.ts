@@ -6,20 +6,52 @@ function httpAndHttps(host: string, port: number): string[] {
 
 const services = [
   {
-    dns: env.FRONTEND_SERVER_DNS,
-    ports: [env.FRONTEND_SERVER_PORT, env.FRONTEND_SERVER_K8S_PORT],
+    endpoints: [
+      {
+        dns: env.FRONTEND_SERVER_DC_DNS,
+        port: env.FRONTEND_SERVER_DC_PORT,
+      },
+      {
+        dns: env.FRONTEND_SERVER_K8S_DNS,
+        port: env.FRONTEND_SERVER_K8S_PORT,
+      },
+    ],
   },
   {
-    dns: env.ASTROLOGY_API_SERVER_DNS,
-    ports: [env.ASTROLOGY_API_SERVER_PORT, env.ASTROLOGY_API_SERVER_K8S_PORT],
+    endpoints: [
+      {
+        dns: env.ASTROLOGY_API_SERVER_DC_DNS,
+        port: env.ASTROLOGY_API_SERVER_DC_PORT,
+      },
+      {
+        dns: env.ASTROLOGY_API_SERVER_K8S_DNS,
+        port: env.ASTROLOGY_API_SERVER_K8S_PORT,
+      },
+    ],
   },
   {
-    dns: env.BOOKING_API_SERVER_DNS,
-    ports: [env.BOOKING_API_SERVER_PORT, env.BOOKING_API_SERVER_K8S_PORT],
+    endpoints: [
+      {
+        dns: env.BOOKING_API_SERVER_DC_DNS,
+        port: env.BOOKING_API_SERVER_DC_PORT,
+      },
+      {
+        dns: env.BOOKING_API_SERVER_K8S_DNS,
+        port: env.BOOKING_API_SERVER_K8S_PORT,
+      },
+    ],
   },
   {
-    dns: env.PAYMENT_API_SERVER_DNS,
-    ports: [env.PAYMENT_API_SERVER_PORT, env.PAYMENT_API_SERVER_K8S_PORT],
+    endpoints: [
+      {
+        dns: env.PAYMENT_API_SERVER_DC_DNS,
+        port: env.PAYMENT_API_SERVER_DC_PORT,
+      },
+      {
+        dns: env.PAYMENT_API_SERVER_K8S_DNS,
+        port: env.PAYMENT_API_SERVER_K8S_PORT,
+      },
+    ],
   },
 ];
 
@@ -33,12 +65,11 @@ const localHosts = [
 const origins: string[] = [];
 
 for (const service of services) {
-  for (const port of service.ports) {
-    if (port === undefined) continue;
+  for (const endpoint of service.endpoints) {
     for (const host of localHosts) {
-      origins.push(...httpAndHttps(host, port));
+      origins.push(...httpAndHttps(host, endpoint.port));
     }
-    origins.push(...httpAndHttps(service.dns, port));
+    origins.push(...httpAndHttps(endpoint.dns, endpoint.port));
   }
 }
 

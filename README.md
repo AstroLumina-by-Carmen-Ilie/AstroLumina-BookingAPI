@@ -44,7 +44,7 @@ Each session collects: phone number, birth date, birth place, and birth time.
 | ----------------- | ----------------------------------------------------------- |
 | **HTTP Headers**  | Helmet (CSP, HSTS, X-Frame-Options, etc.)                   |
 | **Rate Limiting** | 30 requests/minute per IP                                   |
-| **CORS**          | Dynamic whitelist built from `*_SERVER_PORT` / `*_SERVER_DNS` env vars (Astrology, Booking, Payment, Frontend services) + Cloudflare Pages domains (`astrolumina.pages.dev`, `develop.astrolumina.pages.dev`, `astrolumina.com`, `astrolumina.ro`). Override via `CORS_ORIGINS`. |
+| **CORS**          | Dynamic whitelist built from `*_SERVER_DC_PORT` / `*_SERVER_DC_DNS` and `*_SERVER_K8S_PORT` / `*_SERVER_K8S_DNS` env vars (Astrology, Booking, Payment, Frontend services) over `http` + `https` on `localhost`, `192.168.122.10-12` and each service DNS + Cloudflare Pages domains (`astrolumina.pages.dev`, `develop.astrolumina.pages.dev`, `astrolumina.com`, `astrolumina.ro`). Override via `CORS_ORIGINS`. |
 | **Request Size**  | Max 1MB body (returns `413` if exceeded)                    |
 | **PII Scrubbing** | Sentry automatically redacts API keys from error reports    |
 | **Input Validation** | Zod schemas on all endpoint inputs                       |
@@ -166,16 +166,9 @@ The BookingAPI is a **single-service** deployment that orchestrates multiple ext
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `NODE_ENV` | Yes | — | Environment: `development`, `staging`, `production` |
-| `ASTROLOGY_API_SERVER_PORT` | Yes | — | Astrology API server port |
-| `ASTROLOGY_API_SERVER_DNS` | Yes | — | Astrology API server DNS name |
-| `BOOKING_API_SERVER_PORT` | Yes | — | Booking API server port |
-| `BOOKING_API_SERVER_DNS` | Yes | — | Booking API server DNS name |
-| `PAYMENT_API_SERVER_PORT` | Yes | — | Payment API server port |
-| `PAYMENT_API_SERVER_DNS` | Yes | — | Payment API server DNS name |
-| `FRONTEND_SERVER_PORT` | Yes | — | Frontend dev server port |
-| `FRONTEND_SERVER_DNS` | Yes | — | Frontend server DNS name |
+| `BOOKING_API_SERVER_PORT` | Yes | — | Booking API server port (local process and inside the container) |
 | `BOOKING_API_SENTRY_DSN` | Yes | — | Sentry DSN for error tracking |
-| `CORS_ORIGINS` | No | _(dynamic defaults)_ | Comma-separated allowed CORS origins (overrides defaults) |
+| `CORS_ORIGINS` | No | _(dynamic defaults)_ | Comma-separated allowed CORS origins (overrides defaults built from the `*_SERVER_DC_PORT` / `*_SERVER_DC_DNS` and `*_SERVER_K8S_PORT` / `*_SERVER_K8S_DNS` variables below) |
 | `RESEND_API_KEY` | Yes | — | Resend API key for sending emails |
 | `CALCOM_API_KEY` | Yes | — | Cal.com API key with bookings/write permissions |
 | `CALCOM_BASE_URL` | Yes | — | Cal.com API base URL |
@@ -183,10 +176,26 @@ The BookingAPI is a **single-service** deployment that orchestrates multiple ext
 | `D1_ACCOUNT_ID` | Yes | — | Cloudflare D1 account ID |
 | `D1_DATABASE_ID` | Yes | — | Cloudflare D1 database ID |
 | `D1_API_TOKEN` | Yes | — | Cloudflare D1 API token |
+| `ASTROLOGY_API_SERVER_DC_PORT` | Yes | — | Astrology API port in Docker Compose (for CORS) |
+| `ASTROLOGY_API_SERVER_DC_DNS` | Yes | — | Astrology API DNS/hostname in Docker Compose (for CORS) |
+| `ASTROLOGY_API_SERVER_K8S_PORT` | Yes | — | Astrology API port in Kubernetes (for CORS) |
+| `ASTROLOGY_API_SERVER_K8S_DNS` | Yes | — | Astrology API DNS/hostname in Kubernetes (for CORS) |
+| `BOOKING_API_SERVER_DC_PORT` | Yes | — | Public port mapped to the app port in Docker Compose |
+| `BOOKING_API_SERVER_DC_DNS` | Yes | — | Booking API DNS/hostname in Docker Compose |
+| `BOOKING_API_SERVER_K8S_PORT` | Yes | — | Public port mapped to the app port in Kubernetes |
+| `BOOKING_API_SERVER_K8S_DNS` | Yes | — | Booking API DNS/hostname in Kubernetes |
+| `PAYMENT_API_SERVER_DC_PORT` | Yes | — | Payment API port in Docker Compose (for CORS) |
+| `PAYMENT_API_SERVER_DC_DNS` | Yes | — | Payment API DNS/hostname in Docker Compose (for CORS) |
+| `PAYMENT_API_SERVER_K8S_PORT` | Yes | — | Payment API port in Kubernetes (for CORS) |
+| `PAYMENT_API_SERVER_K8S_DNS` | Yes | — | Payment API DNS/hostname in Kubernetes (for CORS) |
+| `FRONTEND_SERVER_DC_PORT` | Yes | — | Frontend port in Docker Compose (for CORS) |
+| `FRONTEND_SERVER_DC_DNS` | Yes | — | Frontend DNS/hostname in Docker Compose (for CORS) |
+| `FRONTEND_SERVER_K8S_PORT` | Yes | — | Frontend port in Kubernetes (for CORS) |
+| `FRONTEND_SERVER_K8S_DNS` | Yes | — | Frontend DNS/hostname in Kubernetes (for CORS) |
 
 ### Default CORS Origins
 
-When `CORS_ORIGINS` is not set, the API allows requests from all 4 services (Frontend, Astrology API, Booking API, Payment API) on localhost, HTTP, and HTTPS variants, plus:
+When `CORS_ORIGINS` is not set, the API allows requests from all 4 services (Frontend, Astrology API, Booking API, Payment API) on `localhost`, `192.168.122.10-12` and each service DNS, over HTTP and HTTPS, for both the Docker Compose (`*_SERVER_DC_PORT` / `*_SERVER_DC_DNS`) and Kubernetes (`*_SERVER_K8S_PORT` / `*_SERVER_K8S_DNS`) endpoints, plus:
 
 - `https://astrolumina.pages.dev`
 - `https://develop.astrolumina.pages.dev`
