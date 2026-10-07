@@ -4,44 +4,11 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "staging", "production"]),
 
-  ASTROLOGY_API_SERVER_PORT: z.coerce
-    .number()
-    .int()
-    .positive()
-    .min(1, "ASTROLOGY_API_SERVER_PORT is required"),
-  ASTROLOGY_API_SERVER_DNS: z
-    .string()
-    .min(1, "ASTROLOGY_API_SERVER_DNS is required"),
-
   BOOKING_API_SERVER_PORT: z.coerce
     .number()
     .int()
     .positive()
     .min(1, "BOOKING_API_SERVER_PORT is required"),
-  BOOKING_API_SERVER_DNS: z
-    .string()
-    .min(1, "BOOKING_API_SERVER_DNS is required"),
-
-  PAYMENT_API_SERVER_PORT: z.coerce
-    .number()
-    .int()
-    .positive()
-    .min(1, "PAYMENT_API_SERVER_PORT is required"),
-  PAYMENT_API_SERVER_DNS: z
-    .string()
-    .min(1, "PAYMENT_API_SERVER_DNS is required"),
-
-  FRONTEND_SERVER_PORT: z.coerce
-    .number()
-    .int()
-    .positive()
-    .min(1, "FRONTEND_SERVER_PORT is required"),
-  FRONTEND_SERVER_DNS: z.string().min(1, "FRONTEND_SERVER_DNS is required"),
-
-  ASTROLOGY_API_SERVER_K8S_PORT: z.coerce.number().int().positive().optional(),
-  BOOKING_API_SERVER_K8S_PORT: z.coerce.number().int().positive().optional(),
-  PAYMENT_API_SERVER_K8S_PORT: z.coerce.number().int().positive().optional(),
-  FRONTEND_SERVER_K8S_PORT: z.coerce.number().int().positive().optional(),
 
   BOOKING_API_SENTRY_DSN: z
     .string()
@@ -60,6 +27,74 @@ const envSchema = z.object({
   D1_ACCOUNT_ID: z.string().min(1, "D1_ACCOUNT_ID is required"),
   D1_DATABASE_ID: z.string().min(1, "D1_DATABASE_ID is required"),
   D1_API_TOKEN: z.string().min(1, "D1_API_TOKEN is required"),
+
+  ASTROLOGY_API_SERVER_DC_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "ASTROLOGY_API_SERVER_DC_PORT is required"),
+  ASTROLOGY_API_SERVER_DC_DNS: z
+    .string()
+    .min(1, "ASTROLOGY_API_SERVER_DC_DNS is required"),
+  ASTROLOGY_API_SERVER_K8S_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "ASTROLOGY_API_SERVER_K8S_PORT is required"),
+  ASTROLOGY_API_SERVER_K8S_DNS: z
+    .string()
+    .min(1, "ASTROLOGY_API_SERVER_K8S_DNS is required"),
+
+  BOOKING_API_SERVER_DC_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "BOOKING_API_SERVER_DC_PORT is required"),
+  BOOKING_API_SERVER_DC_DNS: z
+    .string()
+    .min(1, "BOOKING_API_SERVER_DC_DNS is required"),
+  BOOKING_API_SERVER_K8S_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "BOOKING_API_SERVER_K8S_PORT is required"),
+  BOOKING_API_SERVER_K8S_DNS: z
+    .string()
+    .min(1, "BOOKING_API_SERVER_K8S_DNS is required"),
+
+  PAYMENT_API_SERVER_DC_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "PAYMENT_API_SERVER_DC_PORT is required"),
+  PAYMENT_API_SERVER_DC_DNS: z
+    .string()
+    .min(1, "PAYMENT_API_SERVER_DC_DNS is required"),
+  PAYMENT_API_SERVER_K8S_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "PAYMENT_API_SERVER_K8S_PORT is required"),
+  PAYMENT_API_SERVER_K8S_DNS: z
+    .string()
+    .min(1, "PAYMENT_API_SERVER_K8S_DNS is required"),
+
+  FRONTEND_SERVER_DC_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "FRONTEND_SERVER_DC_PORT is required"),
+  FRONTEND_SERVER_DC_DNS: z
+    .string()
+    .min(1, "FRONTEND_SERVER_DC_DNS is required"),
+  FRONTEND_SERVER_K8S_PORT: z.coerce
+    .number()
+    .int()
+    .positive()
+    .min(1, "FRONTEND_SERVER_K8S_PORT is required"),
+  FRONTEND_SERVER_K8S_DNS: z
+    .string()
+    .min(1, "FRONTEND_SERVER_K8S_DNS is required"),
 });
 
 function validateEnv() {

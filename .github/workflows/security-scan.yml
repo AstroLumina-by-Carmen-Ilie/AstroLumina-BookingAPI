@@ -196,14 +196,7 @@ jobs:
       contents: read
     env:
       NODE_ENV: development
-      ASTROLOGY_API_SERVER_PORT: "3101"
-      ASTROLOGY_API_SERVER_DNS: ci.local
       BOOKING_API_SERVER_PORT: "3102"
-      BOOKING_API_SERVER_DNS: ci.local
-      PAYMENT_API_SERVER_PORT: "3000"
-      PAYMENT_API_SERVER_DNS: ci.local
-      FRONTEND_SERVER_PORT: "3103"
-      FRONTEND_SERVER_DNS: ci.local
       # Dummy but URL-valid DSN — SDK init succeeds, events go nowhere.
       BOOKING_API_SENTRY_DSN: https://00000000000000000000000000000000@o0.ingest.sentry.io/0
       # Dummy Booking values — satisfy the zod schema; no external call possible.
@@ -214,6 +207,23 @@ jobs:
       D1_ACCOUNT_ID: dummy_account_for_ci_scan_only
       D1_DATABASE_ID: dummy_database_for_ci_scan_only
       D1_API_TOKEN: dummy_token_for_ci_scan_only
+      # Dummy CORS endpoint pairs — only schema validation; no traffic.
+      ASTROLOGY_API_SERVER_DC_PORT: "3101"
+      ASTROLOGY_API_SERVER_DC_DNS: ci.local
+      ASTROLOGY_API_SERVER_K8S_PORT: "3101"
+      ASTROLOGY_API_SERVER_K8S_DNS: ci.local
+      BOOKING_API_SERVER_DC_PORT: "3102"
+      BOOKING_API_SERVER_DC_DNS: ci.local
+      BOOKING_API_SERVER_K8S_PORT: "3102"
+      BOOKING_API_SERVER_K8S_DNS: ci.local
+      PAYMENT_API_SERVER_DC_PORT: "3000"
+      PAYMENT_API_SERVER_DC_DNS: ci.local
+      PAYMENT_API_SERVER_K8S_PORT: "3000"
+      PAYMENT_API_SERVER_K8S_DNS: ci.local
+      FRONTEND_SERVER_DC_PORT: "3103"
+      FRONTEND_SERVER_DC_DNS: ci.local
+      FRONTEND_SERVER_K8S_PORT: "3103"
+      FRONTEND_SERVER_K8S_DNS: ci.local
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
