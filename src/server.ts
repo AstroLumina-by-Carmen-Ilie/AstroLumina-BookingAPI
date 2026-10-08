@@ -16,6 +16,7 @@ import {
   globalErrorHandler,
 } from "./middleware/error-handler.js";
 import healthRouter from "./routes/health.js";
+import { metricsHandler, metricsMiddleware } from "./metrics.js";
 import eventTypesRouter from "./routes/event-types.js";
 import bookingsRouter from "./routes/bookings.js";
 import availabilityRouter from "./routes/availability.js";
@@ -28,6 +29,13 @@ const app = express();
 
 // Trust proxy for correct IP detection behind reverse proxy (needed for rate limiting)
 app.set("trust proxy", 1);
+
+// ─── Metrics ─────────────────────────────────────────────────
+// Registered before the security middlewares so Prometheus scrapes are
+// never rate-limited nor CORS-filtered. Reachable only in-cluster (the
+// Traefik routes expose /api/*, never /metrics).
+app.get("/metrics", metricsHandler);
+app.use(metricsMiddleware);
 
 // ─── Security ────────────────────────────────────────────────
 app.use(securityHeaders);
