@@ -15,9 +15,11 @@
     "clean": "rm -rf node_modules && rm -rf dist",
     "d1:migrate": "tsx src/db/migrate.ts",
     "render-build": "npm run clean && npm install --include=dev && npm run build",
-    "c_u_i_b_d": "npm run clean && npm update --ignore-scripts && npm install --include=dev && npm run build && npm run dev"
+    "c_u_i_b": "npm run clean && npm update --ignore-scripts && npm install --include=dev && npm run build",
+    "c_u_i_b_d": "npm run c_u_i_b && npm run dev"
   },
   "dependencies": {
+    "@prometheus-io/client": "^0.16.1",
     "@sentry/node": "^10.45.0",
     "@sentry/profiling-node": "^11.0.0",
     "axios": "^1.18.0",

@@ -296,6 +296,13 @@ Server status endpoint — returns uptime, memory usage, node version, and envir
 }
 ```
 
+### `GET /metrics`
+
+Prometheus exposition endpoint (plain text). Serves Node.js default metrics
+plus `http_requests_total` and `http_request_duration_seconds`, all labeled
+with `service`. Scraped in-cluster via the `ServiceMonitor`s in the
+AstroLumina-Monitoring repo; not exposed through Traefik.
+
 ### Session Types
 
 #### `GET /api/sessions`
