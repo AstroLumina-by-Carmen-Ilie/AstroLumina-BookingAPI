@@ -2,16 +2,24 @@ name: Promote Staging
 
 # CD: promotes the freshly built image to staging (idle color bump + live
 # flip) in Kubernetes, Helm and Docker Compose. Runs only after the
-# "Build and Deploy" pipeline finishes SUCCESSFULLY on main; anything else
-# (failure, cancellation, PR without merge) never promotes.
+# "Build and Deploy" pipeline finishes SUCCESSFULLY for a PR merged into
+# main; anything else (failure, cancellation, PR without merge) never
+# promotes.
+# NOTE: there is intentionally NO `branches` filter on the workflow_run
+# trigger below. The upstream pipeline runs on pull_request events, so its
+# head_branch is the PR *source* branch, never `main` -- a branches:[main]
+# filter would never match and promotion would silently never run. The
+# main-targeting is enforced instead by the gate on the `resolve` job.
 # The promoted version is resolved once from the git tag on the exact commit
 # the upstream run built, then shared by three parallel jobs -- one per
-# target repo, each with that repo's own checkout, bump logic and push.
+# target repo, each with that repo's own checkout, bump logic, branch and
+# pull request. Merge stays manual: the branch-protection rule on main is
+# untouched, a human merges each promotion PR.
 on:
   workflow_run:
     workflows: ["Build and Deploy"]
     types: [completed]
-    branches: [main]
+    # No `branches` filter here -- see NOTE above.
 
 # Serialize promotions: two builds finishing back-to-back must promote in
 # order, never interleaved (queued runs wait, none is cancelled).
@@ -28,8 +36,13 @@ env:
 
 jobs:
   resolve:
-    # Gate: only a successful upstream pipeline promotes anything.
-    if: github.event.workflow_run.conclusion == 'success'
+    # Gate: only a successful upstream pipeline promotes anything, and only
+    # when that run belonged to a PR targeting main (this replaces the
+    # branches filter, which cannot work with pull_request-triggered runs).
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0].base.ref == 'main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -132,17 +145,34 @@ jobs:
           print(f"Promoting {svc} to {new_tag} on {idle} (was live: {live})")
           PYEOF
 
-      - name: Commit and push Kubernetes update
+      - name: Commit to branch and open promotion PR (Kubernetes update repo)
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
+          BRANCH="promote/${{ env.SVC_NAME }}-${{ env.NEW_TAG }}"
+          # -B resets a stale branch left by an earlier failed run. The
+          # promote/* namespace is bot-owned, so the force-push below only
+          # ever overwrites the bot's own previous attempt, never human work.
+          git checkout -B "$BRANCH"
           git add "staging/${{ env.IDLE_COLOR }}/${{ env.SVC_FILE }}" staging/53-live-services.yaml
           if git diff --cached --quiet; then
             echo "Kubernetes update repo: nothing to commit"
           else
             git commit -m "staging: promote ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} on ${{ env.IDLE_COLOR }} and flip live"
-            git push origin HEAD:main
+          fi
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "Kubernetes update repo: no changes vs main, skipping PR"
+          else
+            git push -u -f origin "$BRANCH"
+            if gh pr view "$BRANCH" --json number -q .number >/dev/null 2>&1; then
+              echo "Kubernetes update repo: PR already exists for $BRANCH, pushed update to it"
+            else
+              gh pr create --base main --head "$BRANCH" \
+                --title "staging: promote ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} on ${{ env.IDLE_COLOR }}" \
+                --body "Automated staging promotion of ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} (idle color ${{ env.IDLE_COLOR }}, live flipped). Merge to deploy to staging."
+            fi
           fi
   promote-helm:
     # Reads liveColor from values-staging.yaml (parsed as YAML), bumps the
@@ -217,17 +247,34 @@ jobs:
           print(f"Promoting {svc} to {new_tag} on {idle} (was live: {live})")
           PYEOF
 
-      - name: Commit and push Helm update
+      - name: Commit to branch and open promotion PR (Helm update repo)
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
+          BRANCH="promote/${{ env.SVC_NAME }}-${{ env.NEW_TAG }}"
+          # -B resets a stale branch left by an earlier failed run. The
+          # promote/* namespace is bot-owned, so the force-push below only
+          # ever overwrites the bot's own previous attempt, never human work.
+          git checkout -B "$BRANCH"
           git add charts/astrolumina/values-staging.yaml
           if git diff --cached --quiet; then
             echo "Helm update repo: nothing to commit"
           else
             git commit -m "staging: promote ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} on ${{ env.IDLE_COLOR }} and flip live"
-            git push origin HEAD:main
+          fi
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "Helm update repo: no changes vs main, skipping PR"
+          else
+            git push -u -f origin "$BRANCH"
+            if gh pr view "$BRANCH" --json number -q .number >/dev/null 2>&1; then
+              echo "Helm update repo: PR already exists for $BRANCH, pushed update to it"
+            else
+              gh pr create --base main --head "$BRANCH" \
+                --title "staging: promote ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} on ${{ env.IDLE_COLOR }}" \
+                --body "Automated staging promotion of ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} (idle color ${{ env.IDLE_COLOR }}, live flipped). Merge to deploy to staging."
+            fi
           fi
   promote-compose:
     # Reads the live color from the app router in routes.yml (parsed as
@@ -311,15 +358,32 @@ jobs:
           print(f"Promoting {svc} to {new_tag} on {idle} (was live: {live})")
           PYEOF
 
-      - name: Commit and push DockerCompose update
+      - name: Commit to branch and open promotion PR (DockerCompose update repo)
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
+          BRANCH="promote/${{ env.SVC_NAME }}-${{ env.NEW_TAG }}"
+          # -B resets a stale branch left by an earlier failed run. The
+          # promote/* namespace is bot-owned, so the force-push below only
+          # ever overwrites the bot's own previous attempt, never human work.
+          git checkout -B "$BRANCH"
           git add staging/versions.env staging/traefik/dynamic/routes.yml
           if git diff --cached --quiet; then
             echo "DockerCompose update repo: nothing to commit"
           else
             git commit -m "staging: promote ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} on ${{ env.IDLE_COLOR }} and flip live"
-            git push origin HEAD:main
+          fi
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
+            echo "DockerCompose update repo: no changes vs main, skipping PR"
+          else
+            git push -u -f origin "$BRANCH"
+            if gh pr view "$BRANCH" --json number -q .number >/dev/null 2>&1; then
+              echo "DockerCompose update repo: PR already exists for $BRANCH, pushed update to it"
+            else
+              gh pr create --base main --head "$BRANCH" \
+                --title "staging: promote ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} on ${{ env.IDLE_COLOR }}" \
+                --body "Automated staging promotion of ${{ env.SVC_NAME }} to ${{ env.NEW_TAG }} (idle color ${{ env.IDLE_COLOR }}, live flipped). Merge to deploy to staging."
+            fi
           fi
