@@ -198,8 +198,9 @@ jobs:
             fi
           fi
   promote-helm:
-    # Reads liveColor from values-staging.yaml (parsed as YAML), bumps the
-    # idle color tag, flips liveColor. Staging only.
+    # Reads this service's live color from blueGreen.liveColors in
+    # values-staging.yaml (parsed as YAML), bumps the idle color tag for
+    # this service only, flips only its live color. Staging only.
     needs: resolve
     if: needs.resolve.outputs.promote == 'true'
     runs-on: ubuntu-latest
@@ -236,17 +237,37 @@ jobs:
           parts = new_tag.split(".")
           if len(parts) != 3 or not all(p.isdigit() for p in parts):
               sys.exit(f"ERROR: unexpected version tag {new_tag!r}")
-          # --- 1. Read the live color and flip it ---
+          # --- 1. Read this service's live color and flip only its line ---
           helm_path = "charts/astrolumina/values-staging.yaml"
           helm_txt = open(helm_path).read()
           vals = yaml.safe_load(helm_txt)
-          live = vals["blueGreen"]["liveColor"]
+          live_map = vals["blueGreen"].get("liveColors")
+          if not isinstance(live_map, dict) or svc not in live_map:
+              sys.exit(f"ERROR: blueGreen.liveColors.{svc} not found")
+          live = live_map[svc]
           if live not in ("blue", "green"):
-              sys.exit(f"ERROR: unexpected liveColor {live!r}")
+              sys.exit(f"ERROR: unexpected live color {live!r} for {svc}")
           idle = "green" if live == "blue" else "blue"
-          helm_new, n = re.subn(rf"^([ \t]*liveColor: ){live}\b", rf"\g<1>{idle}", helm_txt, flags=re.M)
+          # Flip only this service's line inside the liveColors map, keeping
+          # its trailing comment. Scoped by section walk so other maps
+          # (imageTags lines carry versions, never bare colors) stay intact.
+          hlines = helm_txt.splitlines(keepends=True)
+          sec = next(i for i, l in enumerate(hlines) if l == "  liveColors:\n")
+          end = next(
+              (i for i in range(sec + 1, len(hlines)) if re.match(r"^(?:\S|  \S)", hlines[i])),
+              len(hlines),
+          )
+          tgt = next(
+              (i for i in range(sec + 1, end) if hlines[i].startswith(f"    {svc}: ")),
+              None,
+          )
+          if tgt is None:
+              sys.exit(f"ERROR: {svc} key not found under liveColors")
+          flipped, n = re.subn(f"^    {svc}: {live}\\b(.*)$", f"    {svc}: {idle}\\g<1>", hlines[tgt])
           if n != 1:
-              sys.exit(f"ERROR: expected 1 liveColor line, found {n}")
+              sys.exit(f"ERROR: liveColors line mismatch: {hlines[tgt]!r}")
+          hlines[tgt] = flipped
+          helm_new = "".join(hlines)
 
           # --- 2. Bump the idle-color tag (exact key inside the idle section) ---
           if svc not in vals["imageTags"][idle]:
