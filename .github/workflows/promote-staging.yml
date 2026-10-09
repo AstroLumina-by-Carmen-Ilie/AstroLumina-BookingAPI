@@ -36,24 +36,46 @@ env:
 
 jobs:
   resolve:
-    # Gate: only a successful upstream pipeline promotes anything, and only
-    # when that run belonged to a PR targeting main (this replaces the
-    # branches filter, which cannot work with pull_request-triggered runs).
+    # Gate: only a successful upstream pipeline reaches this job. Whether that
+    # run was a real merge into main is decided by the gate step below via the
+    # API -- the workflow_run payload cannot tell us: for runs triggered by a
+    # closed PR, GitHub sends an empty `pull_requests` array (the PR is no
+    # longer open), so any `pull_requests[0]` check silently never matches.
     if: >-
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.pull_requests[0].base.ref == 'main'
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     outputs:
       version: ${{ steps.ver.outputs.version }}
+      promote: ${{ steps.gate.outputs.promote }}
     steps:
       - name: Checkout app repo at the built commit
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
+
+      - name: Check the built commit merged into main
+        # The upstream pipeline runs on PR-close, so its head commit is a
+        # merge only when the PR was actually merged. Closed-but-unmerged PRs
+        # must never promote: ask the API which PRs contain this commit and
+        # require one that is merged with base main.
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha="${{ github.event.workflow_run.head_sha }}"
+          pr=$(gh api "repos/${{ github.repository }}/commits/$sha/pulls" \
+            --jq '[.[] | select(.merged_at != null and .base.ref == "main")][0].number // empty')
+          if [ -z "$pr" ]; then
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            echo "Head commit $sha is not a merge into main -- skipping promotion."
+          else
+            echo "promote=true" >> "$GITHUB_OUTPUT"
+            echo "Head commit $sha merged into main via PR #$pr -- promoting."
+          fi
 
       - name: Resolve built version from git tag
         id: ver
@@ -66,6 +88,7 @@ jobs:
     # Reads the live color from the *-live Service (parsed as YAML), bumps
     # the image on the idle Deployment, flips the selector. Staging only.
     needs: resolve
+    if: needs.resolve.outputs.promote == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -178,6 +201,7 @@ jobs:
     # Reads liveColor from values-staging.yaml (parsed as YAML), bumps the
     # idle color tag, flips liveColor. Staging only.
     needs: resolve
+    if: needs.resolve.outputs.promote == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -281,6 +305,7 @@ jobs:
     # YAML), bumps the idle tag in versions.env, flips the router. Staging
     # only.
     needs: resolve
+    if: needs.resolve.outputs.promote == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
