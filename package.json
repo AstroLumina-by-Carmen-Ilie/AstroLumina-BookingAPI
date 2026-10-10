@@ -12,6 +12,7 @@
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test \"test/**/*.test.ts\"",
     "clean": "rm -rf node_modules && rm -rf dist",
     "d1:migrate": "tsx src/db/migrate.ts",
     "render-build": "npm run clean && npm install --include=dev && npm run build",
